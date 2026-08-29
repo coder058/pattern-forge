@@ -1,4 +1,5 @@
 /* SOURCE: purpose-built chart layout geometry and theme choices, not market parameters. */
+.mw-partial-warning { margin: 0; padding: 10px 16px; color: #efc77e; border-bottom: 1px solid var(--line); }
 .market-workspace {
   --bg: #0b0f16;
   --panel: #111720;

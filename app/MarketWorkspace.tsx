@@ -85,7 +85,13 @@ export default function MarketWorkspace() {
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     loadMarket(source, controller.signal)
       .then((value) => {
-        if (current) setLoaded(value);
+        if (current) {
+          setLoaded(value);
+          // SOURCE: use an actually loaded interval; never label another frame as the failed one.
+          if (source.kind === "public") setTimeframe((selected) =>
+            value.frames[selected]?.length ? selected :
+              SOURCE_INTERVALS(source).find((tf) => value.frames[tf]?.length) ?? selected);
+        }
       })
       .catch((cause) => {
         if (current)
@@ -263,6 +269,8 @@ export default function MarketWorkspace() {
             <button
               key={tf}
               onClick={() => changeTimeframe(tf)}
+              disabled={!!active?.failures?.[tf]}
+              title={active?.failures?.[tf] ? `${tf} unavailable. Try Refresh.` : undefined}
               aria-pressed={tf === timeframe}
               className={tf === timeframe ? "is-active" : ""}
             >
@@ -484,6 +492,11 @@ export default function MarketWorkspace() {
               )}
             </div>
           </div>
+          {active?.failures && Object.keys(active.failures).length > 0 && (
+            <p className="mw-partial-warning" role="status">
+              Unavailable intervals: {Object.keys(active.failures).join(", ")}. Showing available data only. Try Refresh to retry.
+            </p>
+          )}
           <div className="mw-chart-tools">
             <label>
               Draw
@@ -641,11 +654,12 @@ export default function MarketWorkspace() {
                       <button
                         key={tf}
                         onClick={() => changeTimeframe(tf)}
+                        disabled={!!active?.failures?.[tf]}
                         className={timeframe === tf ? "selected" : ""}
                       >
                         <strong>{tf}</strong>
                         <span>
-                          {row.trend}
+                          {active?.failures?.[tf] ? "Unavailable" : row.trend}
                           <small>
                             {row.count} bars · RSI {row.rsi?.toFixed(1) ?? "—"}
                           </small>

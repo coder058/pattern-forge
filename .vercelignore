@@ -2,3 +2,6 @@ tests
 scripts
 README.md
 *.tsbuildinfo
+app/MarketRadar.tsx
+app/TradingWorkstation.tsx
+app/chatgpt-auth.ts

@@ -1,11 +1,10 @@
 import catalog from "../public/recordings/catalog.json";
 import {
-  INTERVAL_MS,
   validateBars,
   type Bar,
   type Interval,
 } from "./marketAnalysis";
-import { closedPublicCandles } from "./publicMarket";
+import { loadPublicSnapshot } from "./publicSnapshot";
 
 export type MarketSource = {
   id: string;
@@ -27,6 +26,7 @@ export type LoadedMarket = {
   frames: Partial<Record<Interval, Bar[]>>;
   asOf: number;
   base?: Interval;
+  failures?: Partial<Record<Interval, string>>;
 };
 export const SOURCES: MarketSource[] = [
   ...["BTC", "ETH", "SOL"].map((symbol) => ({
@@ -54,8 +54,6 @@ export const SOURCES: MarketSource[] = [
     note: "28 July 2026: a breakout that failed. Historical case, not an active setup.",
   },
 ];
-// GUESS: UNCALIBRATED GUESS — bounds request size/display history; not a trading lookback.
-const PUBLIC_BARS = 300;
 export const SOURCE_INTERVALS = (source: MarketSource): Interval[] =>
   source.kind === "recording"
     ? ["1h", "4h", "1d"]
@@ -68,38 +66,8 @@ export async function loadMarket(
   signal: AbortSignal,
 ): Promise<LoadedMarket> {
   if (source.kind === "public") {
-    const asOf = Date.now();
-    const entries = await Promise.all(
-      SOURCE_INTERVALS(source).map(async (interval) => {
-        const response = await fetch("https://api.hyperliquid.xyz/info", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "candleSnapshot",
-            req: {
-              coin: source.symbol,
-              interval,
-              startTime: asOf - INTERVAL_MS[interval] * PUBLIC_BARS,
-              endTime: asOf,
-            },
-          }),
-          signal,
-        });
-        if (!response.ok)
-          throw new Error(
-            `Market data returned HTTP ${response.status}. Try Refresh.`,
-          );
-        return [
-          interval,
-          closedPublicCandles(
-            await response.json(),
-            asOf,
-            INTERVAL_MS[interval],
-          ),
-        ] as const;
-      }),
-    );
-    return { id: source.id, asOf, frames: Object.fromEntries(entries) };
+    const snapshot = await loadPublicSnapshot(source.symbol, SOURCE_INTERVALS(source), signal);
+    return { id: source.id, ...snapshot };
   }
   const response = await fetch(source.path!, { signal });
   if (!response.ok)

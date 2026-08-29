@@ -82,8 +82,10 @@ become available. Export the prefix and compare its final timestamp with the
 cursor. This investigates a recorded sequence without hindsight from future
 candles; it is not a profitable strategy or a validated trading signal.
 
-Public snapshots currently require all requested intervals to succeed; an
-upstream interval failure can reject the entire load. This limitation is not
-fixed by the indicator tests. No uptime, customer-adoption or operational
+Public snapshots retain validated intervals when another request fails. Missing
+intervals are labeled and disabled; the chart selects an available interval
+instead of showing it under the failed interval's name. Refresh retries all
+intervals. Tests cover HTTP failures, malformed data, total outages and partial
+timeouts with synthetic responses. No uptime, customer-adoption or operational
 performance claim is made. Code is published for inspection; no additional
 reuse license is granted. Third-party licenses and chart attribution remain.
