@@ -11,6 +11,38 @@
   min-height: 100dvh;
   font-size: 13px;
 }
+.mw-intro {
+  min-height: min(820px, 88dvh);
+  padding: clamp(48px, 8vw, 112px) 6vw;
+  background: #e7dfd0;
+  color: #17191c;
+  display: grid;
+  align-content: center;
+  gap: 32px;
+}
+.mw-intro > p {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.mw-intro h1 {
+  margin: 0;
+  font-size: clamp(68px, 12vw, 168px);
+  line-height: .82;
+  letter-spacing: -.075em;
+}
+.mw-intro > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px;
+  max-width: 1040px;
+}
+.mw-intro > div p {
+  margin: 0;
+  font-size: clamp(17px, 1.5vw, 21px);
+  line-height: 1.55;
+}
 .market-workspace button,
 .market-workspace select,
 .market-workspace summary {
@@ -578,6 +610,14 @@
   }
 }
 @media (max-width: 900px) {
+  .mw-intro {
+    min-height: 76dvh;
+    padding: 64px 24px;
+  }
+  .mw-intro > div {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
   .mw-body.with-markets,
   .mw-body.with-markets.with-analysis {
     grid-template-columns: minmax(0, 1fr);
@@ -631,6 +671,9 @@
   }
 }
 @media (max-width: 540px) {
+  .mw-intro h1 {
+    font-size: 22vw;
+  }
   .mw-toolbar > button:first-child {
     display: none;
   }

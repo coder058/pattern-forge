@@ -225,13 +225,19 @@ export default function MarketWorkspace() {
 
   return (
     <main className="market-workspace" ref={workspaceRef}>
-      <header className="mw-header">
-        <a className="mw-brand" href="/">
+      <section className="mw-intro" aria-labelledby="pattern-forge-title">
+        <p>React · TypeScript · Next.js · Data visualization</p>
+        <h1 id="pattern-forge-title">Pattern Forge</h1>
+        <div>
+          <p>A market-data workstation for exploring price, comparing timeframes and testing how a chart idea behaves as new candles arrive.</p>
+          <p>Recorded markets replay one step at a time without revealing future candles. Public snapshots can be inspected, but the workspace does not predict returns or place trades.</p>
+        </div>
+      </section>
+      <header className="mw-header" id="workspace">
+        <a className="mw-brand" href="#pattern-forge-title">
           Pattern Forge<span>Market workspace</span>
         </a>
         <p>Explore price. Compare timeframes. Replay your recordings.</p>
-        <a href="https://github.com/coder058/pattern-forge">Source ↗</a>
-        <a href="https://coder058.github.io/profile/">Jordi Lluís ↗</a>
       </header>
       <div className="mw-toolbar">
         <button
