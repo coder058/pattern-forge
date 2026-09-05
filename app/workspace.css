@@ -9,38 +9,33 @@
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
-  font-size: 13px;
+  font-size: 14px;
 }
+/* GUESS: UNCALIBRATED GUESS — compact introduction keeps the chart within reach;
+   these are editorial dimensions, not measured market or performance values. */
 .mw-intro {
-  min-height: min(820px, 88dvh);
-  padding: clamp(48px, 8vw, 112px) 6vw;
+  padding: 28px 4vw;
   background: #e7dfd0;
   color: #17191c;
   display: grid;
   align-content: center;
-  gap: 32px;
-}
-.mw-intro > p {
-  margin: 0;
-  font-size: 14px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+  gap: 20px;
 }
 .mw-intro h1 {
   margin: 0;
-  font-size: clamp(68px, 12vw, 168px);
-  line-height: .82;
-  letter-spacing: -.075em;
+  font-size: clamp(40px, 5vw, 72px);
+  line-height: 1;
+  letter-spacing: -.05em;
 }
 .mw-intro > div {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 40px;
+  gap: 32px;
   max-width: 1040px;
 }
 .mw-intro > div p {
   margin: 0;
-  font-size: clamp(17px, 1.5vw, 21px);
+  font-size: 16px;
   line-height: 1.55;
 }
 .market-workspace button,
@@ -70,6 +65,7 @@
   max-width: 100%;
 }
 .market-workspace select:focus-visible,
+.market-workspace button:focus-visible,
 .market-workspace input:focus-visible,
 .market-workspace summary:focus-visible {
   outline: 2px solid #a9a0ff;
@@ -103,7 +99,7 @@
   letter-spacing: -0.5px;
 }
 .mw-brand span {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
   color: var(--muted);
@@ -147,7 +143,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
 }
 .mw-analysis-select select {
@@ -193,17 +189,17 @@
   margin: 0 0 16px;
 }
 .mw-popover h3 {
-  font-size: 12px;
+  font-size: 14px;
 }
 .mw-popover > label {
   display: flex;
   gap: 9px;
   align-items: center;
-  font-size: 13px;
+  font-size: 14px;
   margin: 15px 0 5px;
 }
 .mw-popover p {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
   color: #a7b3c6;
   margin: 5px 0 13px;
@@ -213,7 +209,7 @@
   gap: 14px;
 }
 .mw-periods label {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -257,7 +253,7 @@
   margin: 0 7px 16px;
 }
 .mw-sidebar-title h2 {
-  font-size: 13px;
+  font-size: 14px;
   margin: 0;
 }
 .mw-sidebar-title > span {
@@ -273,7 +269,7 @@
 }
 .mw-markets section h3 {
   color: #8794a9;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin: 23px 8px 8px;
@@ -288,18 +284,18 @@
   gap: 5px;
 }
 .mw-markets strong {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 550;
   display: block;
 }
 .mw-markets small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   color: #8693a8;
   margin-top: 3px;
 }
 .mw-markets em {
-  font-size: 9px;
+  font-size: 12px;
   color: #8e9aaf;
   font-style: normal;
 }
@@ -325,20 +321,20 @@
   padding: 18px 22px 12px;
   min-height: 84px;
 }
-.mw-chart-heading h1 {
+.mw-chart-heading h2 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.4px;
 }
-.mw-chart-heading h1 > span {
+.mw-chart-heading h2 > span {
   font-size: 12px;
   color: var(--muted);
   font-weight: 400;
   margin-left: 9px;
 }
 .mw-chart-heading p {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   margin: 7px 0 0;
 }
@@ -346,7 +342,7 @@
   display: inline-block;
   margin-left: 8px;
   color: #a6b5cf;
-  font-size: 10px;
+  font-size: 12px;
 }
 .mw-badge.archive {
   color: #e7b982;
@@ -381,7 +377,7 @@
   gap: 10px;
   padding: 5px 16px 9px;
   border-bottom: 1px solid var(--line);
-  font-size: 11px;
+  font-size: 14px;
   flex-wrap: wrap;
 }
 .mw-chart-tools label {
@@ -394,7 +390,7 @@
   padding: 5px;
 }
 .mw-chart-tools button {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--muted);
 }
 .mw-legend {
@@ -442,12 +438,12 @@
   justify-content: space-between;
   border-top: 1px solid var(--line);
   color: #93a1b5;
-  font-size: 10px;
+  font-size: 12px;
   padding: 5px 18px;
   min-height: 34px;
 }
 .mw-chart-footer button {
-  font-size: 11px;
+  font-size: 14px;
 }
 .mw-replay {
   display: flex;
@@ -457,7 +453,7 @@
   padding: 8px 18px;
   border-top: 1px solid var(--line);
   background: #151823;
-  font-size: 11px;
+  font-size: 14px;
 }
 .mw-replay > span {
   color: #e3bf91;
@@ -468,7 +464,7 @@
   min-width: 50px;
 }
 .mw-replay time {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -482,7 +478,7 @@
   margin: 0 0 16px;
 }
 .mw-analysis p {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.7;
   color: #9daac0;
 }
@@ -491,7 +487,7 @@
   border-bottom: 1px solid var(--line);
 }
 .mw-analysis article h3 {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   color: #b5aee2;
   margin: 0 0 8px;
@@ -611,8 +607,7 @@
 }
 @media (max-width: 900px) {
   .mw-intro {
-    min-height: 76dvh;
-    padding: 64px 24px;
+    padding: 24px;
   }
   .mw-intro > div {
     grid-template-columns: 1fr;
@@ -672,7 +667,7 @@
 }
 @media (max-width: 540px) {
   .mw-intro h1 {
-    font-size: 22vw;
+    font-size: 40px;
   }
   .mw-toolbar > button:first-child {
     display: none;
@@ -692,15 +687,15 @@
     right: 12px;
   }
   .mw-analysis-select {
-    font-size: 11px;
+    font-size: 14px;
   }
   .mw-symbol select {
     max-width: 180px;
   }
-  .mw-chart-heading h1 {
+  .mw-chart-heading h2 {
     font-size: 16px;
   }
-  .mw-chart-heading h1 > span {
+  .mw-chart-heading h2 > span {
     display: block;
     margin: 4px 0;
   }
@@ -728,7 +723,7 @@
   }
   .mw-chart-footer {
     padding: 5px 10px;
-    font-size: 9px;
+    font-size: 12px;
   }
 }
 .mw-pane-label {

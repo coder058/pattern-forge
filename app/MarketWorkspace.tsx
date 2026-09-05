@@ -226,18 +226,17 @@ export default function MarketWorkspace() {
   return (
     <main className="market-workspace" ref={workspaceRef}>
       <section className="mw-intro" aria-labelledby="pattern-forge-title">
-        <p>React · TypeScript · Next.js · Data visualization</p>
         <h1 id="pattern-forge-title">Pattern Forge</h1>
         <div>
-          <p>A market-data workstation for exploring price, comparing timeframes and testing how a chart idea behaves as new candles arrive.</p>
-          <p>Recorded markets replay one step at a time without revealing future candles. Public snapshots can be inspected, but the workspace does not predict returns or place trades.</p>
+          <p>A chart workspace for comparing markets and replaying price history. Indicators use only the candles visible at each step, so later prices cannot change what you saw earlier.</p>
+          <p>Choose a market and a timeframe below. For a recording, move the Replay slider back, then step forward through the candles. Public markets load a snapshot when you select or refresh them.</p>
         </div>
       </section>
       <header className="mw-header" id="workspace">
         <a className="mw-brand" href="#pattern-forge-title">
           Pattern Forge<span>Market workspace</span>
         </a>
-        <p>Explore price. Compare timeframes. Replay your recordings.</p>
+        <p>Charts and recorded-market replay</p>
       </header>
       <div className="mw-toolbar">
         <button
@@ -471,12 +470,12 @@ export default function MarketWorkspace() {
         <section className="mw-chart-panel" aria-label="Market chart">
           <div className="mw-chart-heading">
             <div>
-              <h1>
+              <h2>
                 {source.label}{" "}
                 <span>
                   {source.symbol} · {timeframe}
                 </span>
-              </h1>
+              </h2>
               <p>
                 {source.venue}{" "}
                 <span
