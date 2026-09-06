@@ -1,0 +1,51 @@
+# One documented public endpoint, persisted to PostgreSQL, read back by the app.
+# The named volume is the point: stop everything, start it again, and the stored
+# candles are still there to replay.
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: patternforge
+      POSTGRES_USER: patternforge
+      # SOURCE: local development credential only. Supply a real secret through
+      # the environment before running this anywhere reachable.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-patternforge}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U patternforge -d patternforge"]
+      # GUESS: UNCALIBRATED GUESS — startup allowance, not a measured boot time.
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - candles:/var/lib/postgresql/data
+    # Bound to loopback so a development database is not exposed on the network.
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  ingest:
+    build:
+      context: .
+      dockerfile: ingest/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://patternforge:${POSTGRES_PASSWORD:-patternforge}@db:5432/patternforge
+    # GUESS: UNCALIBRATED GUESS — a five-minute pass is well inside the shortest
+    # stored interval. It is not a freshness guarantee.
+    command: ["--every", "300", "--symbols", "BTC,ETH,SOL", "--intervals", "1h,4h,1d"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+    environment:
+      DATABASE_URL: postgresql://patternforge:${POSTGRES_PASSWORD:-patternforge}@db:5432/patternforge
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  candles:
