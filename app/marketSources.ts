@@ -4,7 +4,6 @@ import {
   type Bar,
   type Interval,
 } from "./marketAnalysis";
-import { loadPublicSnapshot } from "./publicSnapshot";
 
 export type MarketSource = {
   id: string;
@@ -66,8 +65,16 @@ export async function loadMarket(
   signal: AbortSignal,
 ): Promise<LoadedMarket> {
   if (source.kind === "public") {
-    const snapshot = await loadPublicSnapshot(source.symbol, SOURCE_INTERVALS(source), signal);
-    return { id: source.id, ...snapshot };
+    const response = await fetch(`/api/markets/${source.symbol}`, { signal });
+    if (!response.ok) throw new Error("Public candles are unavailable. Try Refresh or choose a recording.");
+    const snapshot = await response.json();
+    if (snapshot.symbol !== source.symbol || !Number.isSafeInteger(snapshot.asOf))
+      throw new Error("The snapshot does not match the selected market.");
+    const frames = Object.fromEntries(SOURCE_INTERVALS(source)
+      .filter(interval => snapshot.frames?.[interval])
+      .map(interval => [interval, validateBars(snapshot.frames[interval], interval, snapshot.asOf)]));
+    if (!Object.keys(frames).length) throw new Error("No closed candles are available.");
+    return { id: source.id, frames, asOf: snapshot.asOf, failures: snapshot.failures };
   }
   const response = await fetch(source.path!, { signal });
   if (!response.ok)

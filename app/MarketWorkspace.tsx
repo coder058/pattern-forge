@@ -23,6 +23,7 @@ import {
   type LoadedMarket,
 } from "./marketSources";
 import "./workspace.css";
+import { LiveQuote } from "./QuoteTicker";
 
 type Analysis = "none" | "timeframes" | "context" | "patterns" | "case";
 // SOURCE: editorial defaults: uncluttered chart, optional analytical layers.
@@ -228,8 +229,8 @@ export default function MarketWorkspace() {
       <section className="mw-intro" aria-labelledby="pattern-forge-title">
         <h1 id="pattern-forge-title">Pattern Forge</h1>
         <div>
-          <p>A chart workspace for comparing markets and replaying price history. Indicators use only the candles visible at each step, so later prices cannot change what you saw earlier.</p>
-          <p>Choose a market and a timeframe below. For a recording, move the Replay slider back, then step forward through the candles. Public markets load a snapshot when you select or refresh them.</p>
+          <p>Explore public crypto prices and recorded markets on one chart. Replay recalculates indicators using only candles available at that point, without looking ahead.</p>
+          <p>Choose a market and a timeframe below. Public quotes update automatically; Refresh reloads the chart’s closed candles. For a recording, move the Replay slider back and step forward.</p>
         </div>
       </section>
       <header className="mw-header" id="workspace">
@@ -395,7 +396,7 @@ export default function MarketWorkspace() {
             <p>
               {source.venue} ·{" "}
               {source.kind === "public"
-                ? "Manual snapshot of public closed candles. Not streaming."
+                ? "Closed candles load through the market API. The separate mid-price uses a read-only WebSocket; it is not an executed trade price. Its timestamp is local receipt time, not exchange latency."
                 : source.note}
             </p>
             {source.kind === "recording" && (
@@ -409,6 +410,7 @@ export default function MarketWorkspace() {
               All timestamps are UTC. Indicators describe history; no trading
               account or order submission is connected.
             </p>
+            <p><a href="https://github.com/coder058/pattern-forge" target="_blank" rel="noreferrer">Code and setup on GitHub ↗</a></p>
             <button onClick={exportData} disabled={!bars.length}>
               Export loaded candles JSON ↓
             </button>
@@ -497,6 +499,7 @@ export default function MarketWorkspace() {
               )}
             </div>
           </div>
+          {source.kind === "public" && <LiveQuote key={source.symbol} symbol={source.symbol} />}
           {active?.failures && Object.keys(active.failures).length > 0 && (
             <p className="mw-partial-warning" role="status">
               Unavailable intervals: {Object.keys(active.failures).join(", ")}. Showing available data only. Try Refresh to retry.

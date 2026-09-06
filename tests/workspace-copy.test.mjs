@@ -7,7 +7,7 @@ const css = readFileSync(new URL('../app/workspace.css', import.meta.url), 'utf8
 
 test('introduction explains how to start and distinguishes snapshots from recordings', () => {
   assert.match(workspace, /Choose a market and a timeframe below/);
-  assert.match(workspace, /Public markets load a snapshot when you select or refresh them/);
+  assert.match(workspace, /Public quotes update automatically; Refresh reloads the chart’s closed candles/);
   assert.match(workspace, /move the Replay slider back/);
   // SOURCE: one page title; the chart uses a subordinate section heading.
   assert.equal((workspace.match(/<h1\b/g) ?? []).length, 1);

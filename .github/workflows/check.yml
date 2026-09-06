@@ -1,0 +1,27 @@
+name: Test and container smoke check
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    # GUESS: UNCALIBRATED GUESS — CI timeout, not application performance.
+    timeout-minutes: 20
+    steps:
+      # SOURCE: actions/checkout v4 commit resolved from the official repository.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Build app and run unit tests inside Docker
+        run: docker build -t pattern-forge:test .
+      - name: Check the running container and error contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          # SOURCE: use the app's default port only on the CI runner loopback.
+          docker run -d --name pattern-forge-test -p 127.0.0.1:3000:3000 pattern-forge:test
+          trap 'docker logs pattern-forge-test; docker rm -f pattern-forge-test' EXIT
+          # GUESS: UNCALIBRATED GUESS — bounded startup retry budget for the CI runner.
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail http://127.0.0.1:3000/api/health
+          curl --fail --output /tmp/pattern-forge-page.html http://127.0.0.1:3000/
+          grep -q 'Pattern Forge' /tmp/pattern-forge-page.html
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/markets/INVALID)" = 400
+          test "$(docker exec pattern-forge-test id -u)" != 0

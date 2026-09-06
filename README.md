@@ -2,14 +2,17 @@
 
 Public site: https://pattern-forge-five.vercel.app/
 
-A chart-first workspace for public Hyperliquid snapshots and existing recorded
+A chart-first workspace for public Hyperliquid quotes, candle snapshots and recorded
 Polymarket Perps markets. This is not an order terminal, strategy recommendation,
 live account monitor or proof of profitability.
 
 ## Interface
 
 - Market search and selector: BTC/ETH/SOL public snapshots; ten recorded markets;
-  the original saved BTC case. Only the selected public market is requested.
+  the original saved BTC case. Only the selected market's candles are requested.
+- A separate live mid-price uses Hyperliquid's public WebSocket. Switching to a
+  recording closes the connection. A missing or disconnected stream loses its
+  live status and clears the price while reconnecting. It never modifies replay.
 - One main chart with separate indicator controls. EMA periods, Bollinger Bands,
   confirmed swing geometry and candle markers are optional price overlays.
 - A lower pane can show volume, Wilder RSI, MACD or be hidden entirely.
@@ -73,6 +76,47 @@ For a fresh clone, use Node 22.13 or newer and run `npm ci` first.
 also produces the production build. Deployment uses the existing linked Vercel
 project. Keep the raw downloads outside this checkout; public JSON is generated
 data, not a hand-edited fixture. Do not run any trading service to test this UI.
+
+## API and deployment
+
+The browser requests `GET /api/markets/BTC` (also ETH and SOL). The Next.js
+service validates closed candles from a fixed Hyperliquid endpoint. Other
+symbols return 400; a total upstream failure returns 503. Partial success names
+the unavailable intervals and is retried on the next request. There is no
+arbitrary URL proxy, credential input, order endpoint or trading account.
+
+Simultaneous requests for the same market share upstream work. Complete
+snapshots are cached briefly within one process, bounded to the three supported
+markets. This is not a distributed cache or database. The response includes
+the snapshot's `asOf`; `X-Snapshot-Cache` identifies reuse. `Server-Timing`
+measures this handler's elapsed wall time, not exchange or browser latency.
+Timeout and cache settings are marked as uncalibrated engineering choices.
+
+`GET /api/health` checks process readiness, not exchange availability.
+
+To run the same app in Docker:
+
+```sh
+docker build -t pattern-forge .
+docker run --rm -p 127.0.0.1:3000:3000 pattern-forge
+```
+
+The multi-stage image runs as a non-root user and excludes local environment
+files. [CI](https://github.com/coder058/pattern-forge/actions/workflows/check.yml)
+builds that image, runs tests during the build, starts it, and checks readiness,
+the page and an invalid-market request. Vercel remains the public deployment;
+it does not use this Docker image. No new paid service is required.
+
+The quote feed uses the documented
+[allMids subscription](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions).
+It supplies a venue mid-price, not a last-trade price. Its displayed timestamp
+is local receipt time, not a latency measurement. Heartbeats, capped retries,
+malformed-message rejection and cleanup are covered by synthetic tests.
+
+I kept streaming quotes separate from candle snapshots: they answer different
+questions, and mixing a current quote into an archived candle would make replay
+misleading. I used an API to centralize validation and share duplicate requests,
+not to hide an exchange URL behind an unnecessary microservice.
 
 ## A reproducible investigation
 
