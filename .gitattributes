@@ -1,0 +1,3 @@
+# The CI job regenerates this fixture and compares it to the committed copy,
+# so its line endings must not depend on the checkout platform.
+ingest/fixtures/public-candles.json text eol=lf

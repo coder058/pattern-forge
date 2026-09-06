@@ -77,8 +77,10 @@ The existing Lightweight Charts dependency and attribution are retained.
 Use the existing Node environment and lockfile. `npm run dev` starts Next;
 For a fresh clone, use Node 22.13 or newer and run `npm ci` first.
 `npm test` runs mechanics and archive-validation tests; `npm run test:build`
-also produces the production build. Deployment uses the existing linked Vercel
-project. Keep the raw downloads outside this checkout; public JSON is generated
+also produces the production build. The ingester's offline tests run with
+`python -m unittest discover -s ingest/tests -t .`; the PostgreSQL checks in
+`ingest/tests/test_persistence.py` are skipped unless `DATABASE_URL` is set.
+Deployment uses the existing linked Vercel project. Keep the raw downloads outside this checkout; public JSON is generated
 data, not a hand-edited fixture. Do not run any trading service to test this UI.
 
 ## API and deployment
@@ -108,8 +110,11 @@ docker run --rm -p 127.0.0.1:3000:3000 pattern-forge
 The multi-stage image runs as a non-root user and excludes local environment
 files. [CI](https://github.com/coder058/pattern-forge/actions/workflows/check.yml)
 builds that image, runs tests during the build, starts it, and checks readiness,
-the page and an invalid-market request. Vercel remains the public deployment;
-it does not use this Docker image. No new paid service is required.
+the page and an invalid-market request. A second job starts a real PostgreSQL
+service, ingests the recorded payload twice, reads it back from a separate
+process, restarts the database and reads it again. Vercel remains the public
+deployment; it does not use this Docker image and does not serve stored candles.
+No new paid service is required.
 
 The quote feed uses the documented
 [allMids subscription](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/websocket/subscriptions).
@@ -121,6 +126,56 @@ I kept streaming quotes separate from candle snapshots: they answer different
 questions, and mixing a current quote into an archived candle would make replay
 misleading. I used an API to centralize validation and share duplicate requests,
 not to hide an exchange URL behind an unnecessary microservice.
+
+## Stored candles
+
+Snapshots were previously held in one process's memory, so a restart lost them
+and the workspace could show nothing when the endpoint was unreachable. A small
+Python ingester now writes closed candles to PostgreSQL, and the app reads them
+back through `GET /api/stored/BTC` (also ETH and SOL). The chart, the replay
+cursor and the timeframe comparison are unchanged: a stored market is just
+another source in the selector, listed under **Stored candles**.
+
+```sh
+# Database, ingester and app together. The named volume keeps the candles.
+docker compose up --build
+
+# One pass against the live endpoint, into an existing database.
+DATABASE_URL=postgresql://... python -m ingest.ingest --symbols BTC --intervals 1h,4h
+
+# Offline: load the recorded payload instead of calling the endpoint.
+DATABASE_URL=postgresql://... python -m ingest.ingest \
+  --fixture ingest/fixtures/public-candles.json --now 1788220800000 --symbols BTC --intervals 1h
+```
+
+The ingester reads the same documented
+[candleSnapshot endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint)
+the browser uses, and applies the same boundary rules in `ingest/candles.py`:
+a still-forming candle, a candle that does not span its interval, a non-numeric
+price and inconsistent OHLC bounds are all refused before any write. Rows
+sharing an opening timestamp with different values are treated as a conflict,
+not a duplicate, and reject the whole response.
+
+`(symbol, interval, open_time)` is the primary key, so re-reading the same
+window cannot create a second row. The upsert suppresses no-op updates, which
+means each pass reports how many candles were inserted, updated and left
+unchanged; a corrected candle updates in place instead of appearing twice.
+Every attempt, including a failure, is recorded in `ingest_runs` with its own
+`fetch_ms` and `write_ms`, measured around the fetch and write calls. Reads
+report `Server-Timing: query;dur=` for the handler.
+
+Those numbers are wall-clock measurements between explicit start and end points
+in one process. They are not throughput, database server time, network time or
+exchange-to-screen latency, and no synchronized clocks are involved.
+
+Limits: closed candles only, so this is a persisted snapshot history and not a
+tick feed. One ingester process, no retention, partitioning or backfill policy,
+and reads are bounded to 300 bars per interval. An empty store answers 404 with
+an instruction rather than an empty chart, and a database that is unreachable
+answers 503 rather than silently falling back to the live endpoint. The
+duplicate and restart behaviour is checked against a real PostgreSQL server in
+CI, using the recorded payload; the counts describe one statement's view, not
+concurrent ingesters.
 
 ## A reproducible investigation
 
