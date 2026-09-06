@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-RUN npm test && npm run build
+RUN npm audit --audit-level=high && npm test && npm run build
 
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /app

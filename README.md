@@ -1,6 +1,10 @@
 # Pattern Forge — market workspace
 
+The application uses Next.js. Unused Vite/Vinext/Cloudflare migration dependencies were removed during the September 2026 dependency audit; no application code or active deployment depends on them.
+
 Public site: https://pattern-forge-five.vercel.app/
+
+[Project walkthrough: user journey, dependencies and implementation steps](https://coder058.github.io/profile/projects/pattern-forge.html).
 
 A chart-first workspace for public Hyperliquid quotes, candle snapshots and recorded
 Polymarket Perps markets. This is not an order terminal, strategy recommendation,
