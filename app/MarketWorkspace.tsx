@@ -89,9 +89,19 @@ export default function MarketWorkspace() {
         if (current) {
           setLoaded(value);
           // SOURCE: use an actually loaded interval; never label another frame as the failed one.
-          if (source.kind === "public") setTimeframe((selected) =>
-            value.frames[selected]?.length ? selected :
-              SOURCE_INTERVALS(source).find((tf) => value.frames[tf]?.length) ?? selected);
+          setTimeframe((selected) => {
+            const allowed = SOURCE_INTERVALS(source);
+            const has = (tf: Interval) =>
+              (value.frames[tf]?.length ?? 0) > 0 ||
+              (value.base === tf && (value.frames[value.base]?.length ?? 0) > 0);
+            if (has(selected)) return selected;
+            return (
+              allowed.find(has) ??
+              (value.base && has(value.base) ? value.base : undefined) ??
+              allowed[0] ??
+              selected
+            );
+          });
         }
       })
       .catch((cause) => {
@@ -184,10 +194,17 @@ export default function MarketWorkspace() {
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
+  useEffect(() => {
+    if (!active || busy || replayCount !== null) return;
+    if ((frames[timeframe]?.length ?? 0) > 0) return;
+    const next = intervals.find((tf) => (frames[tf]?.length ?? 0) > 0);
+    if (next) setTimeframe(next);
+  }, [active, busy, frames, timeframe, intervals, replayCount]);
+
   const selectMarket = (id: string) => {
     const next = SOURCES.find((s) => s.id === id)!;
     setSourceId(id);
-    setTimeframe(next.kind === "recording" ? "1h" : "5m");
+    setTimeframe("5m");
     setReplayCount(null);
     setTool("inspect");
     if (analysis === "case" && next.kind !== "case") setAnalysis("none");
@@ -570,6 +587,9 @@ export default function MarketWorkspace() {
                   Move the replay forward or select a smaller interval. Missing
                   bars are never invented.
                 </p>
+                <button onClick={() => selectMarket("public-BTC")}>
+                  Open BTC 5m
+                </button>
               </div>
             ) : (
               <ProfessionalChart

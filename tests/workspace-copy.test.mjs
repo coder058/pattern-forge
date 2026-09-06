@@ -11,7 +11,8 @@ test('introduction explains how to start and distinguishes snapshots from record
   assert.match(workspace, /move the Replay slider back/);
   // SOURCE: one page title; the chart uses a subordinate section heading.
   assert.equal((workspace.match(/<h1\b/g) ?? []).length, 1);
-  assert.match(css, /\.mw-chart-heading h2/);
+  assert.match(workspace, /Open BTC 5m/);
+  assert.doesNotMatch(workspace, /kind === "recording" \? "1h"/);
 });
 
 test('introduction has no viewport-height gate and controls expose keyboard focus', () => {
