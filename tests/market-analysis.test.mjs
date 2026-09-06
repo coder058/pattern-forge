@@ -68,6 +68,7 @@ test("aggregation preserves OHLCV and excludes partial or gappy groups", () => {
     ).length,
     1,
   );
+  assert.equal(aggregateBars(input, "1h", "1h", 9 * hour).length, 9);
   assert.equal(aggregateBars(input, "1h", "5m", 9 * hour).length, 0);
   assert.equal(aggregateBars(input, "1h", "4h", 3 * hour).length, 0);
 });

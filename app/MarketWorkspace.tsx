@@ -155,21 +155,23 @@ export default function MarketWorkspace() {
   const frames = useMemo(
     () =>
       Object.fromEntries(
-        intervals.map((interval) => [
-          interval,
-          active?.base
-            ? aggregateBars(
-                active.frames[active.base] ?? [],
-                active.base,
-                interval,
-                cutoff,
-              )
-            : (active?.frames[interval] ?? []).filter(
-                (b) => b.closeTime <= cutoff,
-              ),
-        ]),
+        intervals.map((interval) => {
+          const native = (active?.frames[interval] ?? []).filter(
+            (b) => b.closeTime <= cutoff,
+          );
+          if (!active?.base || interval === active.base) return [interval, native];
+          return [
+            interval,
+            aggregateBars(
+              active.frames[active.base] ?? [],
+              active.base,
+              interval,
+              cutoff,
+            ),
+          ];
+        }),
       ) as Partial<Record<Interval, Bar[]>>,
-    [active, cutoff, sourceId],
+    [active, cutoff, intervals],
   );
   const bars = frames[timeframe] ?? [];
   const chart = useMemo(
@@ -204,7 +206,7 @@ export default function MarketWorkspace() {
   const selectMarket = (id: string) => {
     const next = SOURCES.find((s) => s.id === id)!;
     setSourceId(id);
-    setTimeframe("5m");
+    setTimeframe(SOURCE_INTERVALS(next)[0]);
     setReplayCount(null);
     setTool("inspect");
     if (analysis === "case" && next.kind !== "case") setAnalysis("none");

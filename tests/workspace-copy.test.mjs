@@ -12,6 +12,8 @@ test('introduction explains how to start and distinguishes snapshots from record
   // SOURCE: one page title; the chart uses a subordinate section heading.
   assert.equal((workspace.match(/<h1\b/g) ?? []).length, 1);
   assert.match(workspace, /Open BTC 5m/);
+  assert.match(workspace, /SOURCE_INTERVALS\(next\)\[0\]/);
+  assert.match(workspace, /interval === active.base/);
   assert.doesNotMatch(workspace, /kind === "recording" \? "1h"/);
 });
 
