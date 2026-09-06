@@ -20,7 +20,8 @@ jobs:
           docker run -d --name pattern-forge-test -p 127.0.0.1:3000:3000 pattern-forge:test
           trap 'docker logs pattern-forge-test; docker rm -f pattern-forge-test' EXIT
           # GUESS: UNCALIBRATED GUESS — bounded startup retry budget for the CI runner.
-          curl --retry 10 --retry-connrefused --retry-delay 1 --fail http://127.0.0.1:3000/api/health
+          # SOURCE: Docker can accept a connection before Node is listening, causing curl exit 56.
+          curl --retry 10 --retry-all-errors --retry-delay 1 --fail http://127.0.0.1:3000/api/health
           curl --fail --output /tmp/pattern-forge-page.html http://127.0.0.1:3000/
           grep -q 'Pattern Forge' /tmp/pattern-forge-page.html
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/markets/INVALID)" = 400
