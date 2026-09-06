@@ -1,0 +1,2 @@
+# SOURCE: psycopg 3 with the bundled libpq, so the image needs no build toolchain.
+psycopg[binary]==3.3.5

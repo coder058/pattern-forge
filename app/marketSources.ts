@@ -10,7 +10,7 @@ export type MarketSource = {
   symbol: string;
   label: string;
   group: string;
-  kind: "public" | "recording" | "case";
+  kind: "public" | "stored" | "recording" | "case";
   venue: string;
   path?: string;
   count?: number;
@@ -41,6 +41,19 @@ export const SOURCES: MarketSource[] = [
     kind: "public" as const,
     venue: "Hyperliquid",
   })),
+  // Served from PostgreSQL by the ingester, so these survive a restart of the
+  // application and remain readable when the upstream endpoint is unreachable.
+  ...["BTC", "ETH", "SOL"].map((symbol) => ({
+    id: `stored-${symbol}`,
+    symbol,
+    label: (
+      { BTC: "Bitcoin", ETH: "Ethereum", SOL: "Solana" } as Record<string, string>
+    )[symbol],
+    group: "Stored candles",
+    kind: "stored" as const,
+    venue: "Hyperliquid via PostgreSQL",
+    note: "Read from the local database. Empty until the ingester has run.",
+  })),
   ...catalog.map((item) => ({ ...item, kind: "recording" as const })),
   {
     id: "saved-btc",
@@ -54,7 +67,7 @@ export const SOURCES: MarketSource[] = [
   },
 ];
 export const SOURCE_INTERVALS = (source: MarketSource): Interval[] =>
-  source.kind === "recording"
+  source.kind === "recording" || source.kind === "stored"
     ? ["1h", "4h", "1d"]
     : source.kind === "case"
       ? ["5m", "30m", "1h", "4h"]
@@ -64,9 +77,16 @@ export async function loadMarket(
   source: MarketSource,
   signal: AbortSignal,
 ): Promise<LoadedMarket> {
-  if (source.kind === "public") {
-    const response = await fetch(`/api/markets/${source.symbol}`, { signal });
-    if (!response.ok) throw new Error("Public candles are unavailable. Try Refresh or choose a recording.");
+  if (source.kind === "public" || source.kind === "stored") {
+    const stored = source.kind === "stored";
+    const response = await fetch(`/api/${stored ? "stored" : "markets"}/${source.symbol}`, { signal });
+    if (!response.ok) {
+      const reason = await response.json().catch(() => undefined);
+      if (typeof reason?.error === "string") throw new Error(reason.error);
+      throw new Error(stored
+        ? "Stored candles are unavailable. Check the database, or choose a recording."
+        : "Public candles are unavailable. Try Refresh or choose a recording.");
+    }
     const snapshot = await response.json();
     if (snapshot.symbol !== source.symbol || !Number.isSafeInteger(snapshot.asOf))
       throw new Error("The snapshot does not match the selected market.");

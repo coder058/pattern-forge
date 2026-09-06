@@ -26,3 +26,80 @@ jobs:
           grep -q 'Pattern Forge' /tmp/pattern-forge-page.html
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/markets/INVALID)" = 400
           test "$(docker exec pattern-forge-test id -u)" != 0
+          # Without a database the stored reader must say so, not appear healthy.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/stored/BTC)" = 503
+
+  persistence:
+    runs-on: ubuntu-latest
+    # GUESS: UNCALIBRATED GUESS — CI timeout, not application performance.
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: patternforge
+          POSTGRES_USER: patternforge
+          # CI-only credential for an ephemeral service container.
+          POSTGRES_PASSWORD: patternforge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U patternforge -d patternforge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://patternforge:patternforge@127.0.0.1:5432/patternforge
+      # SOURCE: the fixed instant the recorded payload is validated against.
+      # See ingest/fixtures/build_fixture.py.
+      FIXTURE_NOW_MS: "1788220800000"
+      # SOURCE: 48 of the 50 recorded BTC hourly rows are closed and unique.
+      EXPECTED_HOURLY: "48"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      # SOURCE: actions/setup-python v5 and actions/setup-node v4 pinned by commit.
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r ingest/requirements.txt
+          npm ci
+      - name: The recorded fixture is the committed one
+        run: |
+          python -m ingest.fixtures.build_fixture
+          git diff --exit-code -- ingest/fixtures/public-candles.json
+
+      - name: Ingest, repeat and confirm the stored rows
+        run: python -m unittest ingest.tests.test_persistence -v
+
+      - name: Load the fixture in one process, then read it back in another
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ingest.ingest \
+            --fixture ingest/fixtures/public-candles.json \
+            --now "$FIXTURE_NOW_MS" --symbols BTC --intervals 1h --show-stored
+          # A second pass must not grow the table: the primary key is the guard.
+          python -m ingest.ingest \
+            --fixture ingest/fixtures/public-candles.json \
+            --now "$FIXTURE_NOW_MS" --symbols BTC --intervals 1h
+          # This process never saw the ingester, so the rows can only come from PostgreSQL.
+          node scripts/check_persistence.mjs "$EXPECTED_HOURLY"
+
+      - name: Restart the database and replay what survived
+        shell: bash
+        run: |
+          set -euo pipefail
+          container="$(docker ps --filter ancestor=postgres:18-alpine --format '{{.ID}}' | head -n 1)"
+          test -n "$container"
+          docker restart "$container"
+          # GUESS: UNCALIBRATED GUESS — bounded wait for the restarted server.
+          for attempt in $(seq 1 30); do
+            if docker exec "$container" pg_isready -U patternforge -d patternforge; then break; fi
+            sleep 2
+          done
+          node scripts/check_persistence.mjs "$EXPECTED_HOURLY"
