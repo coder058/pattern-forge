@@ -1,8 +1,12 @@
 # Pattern Forge — market workspace
 
-The application uses Next.js. Unused Vite/Vinext/Cloudflare migration dependencies were removed during the September 2026 dependency audit; no application code or active deployment depends on them.
+[![CI](https://github.com/coder058/pattern-forge/actions/workflows/check.yml/badge.svg)](https://github.com/coder058/pattern-forge/actions/workflows/check.yml)
 
-Public site: https://pattern-forge-five.vercel.app/
+**Live demo:** https://pattern-forge-five.vercel.app/
+
+**Architecture:** the browser talks to Next.js route handlers that validate closed candles from Hyperliquid's public HTTP API. A separate WebSocket carries live mid-price and never writes into replay. Recorded replay uses only the selected prefix; incomplete higher-timeframe groups are omitted, not guessed. The public Vercel demo does not serve PostgreSQL — persistence is for local use and CI.
+
+The application uses Next.js. Unused Vite/Vinext/Cloudflare migration dependencies were removed during the September 2026 dependency audit; no application code or active deployment depends on them.
 
 [Project walkthrough: user journey, dependencies and implementation steps](https://coder058.github.io/profile/projects/pattern-forge.html).
 
