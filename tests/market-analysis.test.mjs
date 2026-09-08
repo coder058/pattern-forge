@@ -7,6 +7,7 @@ import {
   ema,
   rsi,
   macd,
+  murphyReading,
   validateBars,
   INTERVAL_MS,
 } from "../app/marketAnalysis.ts";
@@ -149,10 +150,9 @@ test("pattern confirmation never appears before bar close or bridges missing bar
     },
   ];
   const patterns = calculateChart(input).overlays.patterns;
-  assert.equal(
-    patterns.find((p) => p.name === "Bullish engulfing").knownAt,
-    2 * hour,
-  );
+  const engulfing = patterns.find((p) => p.name === "Bullish engulfing");
+  assert.equal(engulfing.time, hour);
+  assert.equal(engulfing.knownAt, 2 * hour);
   assert.ok(
     !calculateChart([
       { ...input[0] },
@@ -229,4 +229,34 @@ test("saved BTC case remains a verified historical input in all supplied interva
     assert.ok(
       validateBars(frame.candles, interval, Date.parse(saved.asOf)).length > 0,
     );
+});
+test("Murphy reading names the last closed bar without scoring a trade", () => {
+  const short = murphyReading(fixture(10));
+  assert.equal(short.setup, "Waiting for a full window");
+  const rising = fixture(80);
+  const mid = murphyReading(rising);
+  assert.equal(mid.trend, "Rising");
+  assert.match(mid.setup, /Uptrend/);
+  assert.match(mid.because, /not a sell|still inside|envelope/i);
+  const extended = [
+    ...rising.slice(0, -1),
+    {
+      ...rising.at(-1),
+      h: rising.at(-1).c + 80,
+      c: rising.at(-1).c + 80,
+    },
+  ];
+  const high = murphyReading(extended);
+  assert.equal(high.location, "Above upper band");
+  assert.match(high.setup, /extended high/);
+});
+
+test("SYNTHETIC: Murphy uses the same selected EMA periods as the visible chart", () => {
+  const bars = fixture(35);
+  assert.equal(murphyReading(bars).setup, "Waiting for a full window");
+  const reading = murphyReading(bars, 9, 26);
+  assert.equal(reading.trend, "Rising");
+  assert.match(reading.because, /EMA 9 above EMA 26/);
+  assert.doesNotMatch(reading.because, /EMA 20|EMA 50/);
+  assert.equal(murphyReading(bars, 20, 100).setup, "Waiting for a full window");
 });

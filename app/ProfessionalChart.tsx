@@ -19,6 +19,7 @@ import {
   type SeriesMarker,
   type Time,
   type UTCTimestamp,
+  type WhitespaceData,
 } from "lightweight-charts";
 import {
   useCallback,
@@ -142,6 +143,17 @@ type PatternGroup = {
   patterns: ProfessionalChartPattern[];
 };
 
+export type ChartReading = {
+  kicker: string;
+  setup: string;
+  steps: { n: string; label: string; value: string }[];
+  because: string;
+  anchor?: { time: number; label: string };
+};
+
+// GUESS: UNCALIBRATED GUESS — name the most recent markers only so the plot stays readable.
+const NAMED_MARKER_LIMIT = 8;
+
 type ChartRefs = {
   chart: IChartApi;
   candles: ISeriesApi<"Candlestick", Time>;
@@ -226,38 +238,56 @@ function directionTone(direction: string): "bull" | "bear" | "neutral" {
   return "neutral";
 }
 
+function shortPatternName(name: string): string {
+  if (name === "Doji") return "Doji";
+  if (name.startsWith("Hammer")) return "Hammer";
+  if (name.toLowerCase().includes("star")) return "Star";
+  if (name.startsWith("Bullish")) return "Engulf↑";
+  if (name.startsWith("Bearish")) return "Engulf↓";
+  return name.split(" ")[0] ?? name;
+}
+
 function buildPatternGroups(
   patterns: ProfessionalChartPattern[],
 ): PatternGroup[] {
   const groups = new Map<number, ProfessionalChartPattern[]>();
   patterns.forEach((pattern) => {
-    const knownTime = toChartTime(pattern.knownAt ?? pattern.time);
-    const current = groups.get(knownTime) ?? [];
+    // SOURCE: the candle series is keyed by open time. closeTime is when the
+    // shape became known; it is not a time that exists on the series.
+    const seriesTime = toChartTime(pattern.time);
+    const current = groups.get(seriesTime) ?? [];
     current.push(pattern);
-    groups.set(knownTime, current);
+    groups.set(seriesTime, current);
   });
   return [...groups.entries()]
     .sort(([left], [right]) => left - right)
-    .map(([knownTime, grouped]) => ({
-      id: `pattern-${knownTime}`,
-      knownTime: knownTime as UTCTimestamp,
+    .map(([seriesTime, grouped]) => ({
+      id: `pattern-${seriesTime}`,
+      knownTime: seriesTime as UTCTimestamp,
       patterns: grouped,
     }));
 }
 
-function markerForGroup(group: PatternGroup): SeriesMarker<Time> {
+function markerForGroup(
+  group: PatternGroup,
+  named: boolean,
+): SeriesMarker<Time> {
   const tones = new Set(group.patterns.map((pattern) => directionTone(pattern.direction)));
   const tone = tones.size === 1 ? [...tones][0] : "neutral";
   const bullish = tone === "bull";
   const bearish = tone === "bear";
+  const label =
+    group.patterns.length > 1
+      ? `${shortPatternName(group.patterns[0].name)}+${group.patterns.length - 1}`
+      : shortPatternName(group.patterns[0].name);
   return {
     id: group.id,
     time: group.knownTime,
     position: bullish ? "belowBar" : "aboveBar",
     shape: bullish ? "arrowUp" : bearish ? "arrowDown" : "circle",
     color: bullish ? "#32d3b8" : bearish ? "#ff6573" : "#f4b548",
-    text: group.patterns.length > 1 ? String(group.patterns.length) : undefined,
-    size: group.patterns.length > 1 ? 1.3 : 1,
+    text: named ? label : undefined,
+    size: named ? 1.2 : 1,
   };
 }
 
@@ -270,6 +300,8 @@ export function ProfessionalChart({
   symbol,
   lowerPanel = "volume",
   oscillatorData,
+  reading,
+  highlightTime,
 }: {
   data: ProfessionalChartData;
   timeframe: string;
@@ -279,6 +311,8 @@ export function ProfessionalChart({
   symbol: string;
   lowerPanel?: "none" | "volume" | "rsi" | "macd";
   oscillatorData?: { line: ProfessionalChartPoint[]; signal?: ProfessionalChartPoint[]; histogram?: ProfessionalChartPoint[] };
+  reading?: ChartReading | null;
+  highlightTime?: number | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -336,6 +370,7 @@ export function ProfessionalChart({
     layers.touches,
   ]);
 
+  const patternsWereOn = useRef(false);
   useEffect(() => {
     groupsRef.current = groups;
     if (
@@ -344,7 +379,19 @@ export function ProfessionalChart({
     ) {
       setSelectedGroup(null);
     }
-  }, [groups, selectedGroup]);
+    if (layers.patterns && !patternsWereOn.current && groups.length) {
+      setSelectedGroup(groups.at(-1) ?? null);
+    }
+    patternsWereOn.current = layers.patterns;
+  }, [groups, selectedGroup, layers.patterns]);
+
+  useEffect(() => {
+    if (highlightTime == null) return;
+    const group = groups.find((item) =>
+      item.patterns.some((pattern) => Number(pattern.time) === highlightTime),
+    );
+    if (group) setSelectedGroup(group);
+  }, [highlightTime, groups]);
 
   const drawOverlay = useCallback(() => {
     const canvas = drawingCanvasRef.current;
@@ -637,10 +684,10 @@ export function ProfessionalChart({
         close: candle.c,
       }))
       .sort((left, right) => Number(left.time) - Number(right.time));
-    const volumeRows: HistogramData<Time>[] = data.candles
-      .map((candle) => ({
+    const volumeRows: (HistogramData<Time> | WhitespaceData<Time>)[] = data.candles
+      .map((candle) => candle.v === undefined ? { time: toChartTime(candle.t) } : ({
         time: toChartTime(candle.t),
-        value: candle.v ?? 0,
+        value: candle.v,
         color:
           candle.c >= candle.o
             ? "rgba(36, 196, 174, 0.34)"
@@ -665,7 +712,14 @@ export function ProfessionalChart({
       layers.bollinger ? compactLineData(data.overlays.bollinger.lower) : [],
     );
 
-    const compactPatternMarkers = groups.map(markerForGroup);
+    const namedFrom = Math.max(0, groups.length - NAMED_MARKER_LIMIT);
+    const compactPatternMarkers = groups.map((group, index) =>
+      markerForGroup(group, index >= namedFrom),
+    );
+    const contextMarkers: SeriesMarker<Time>[] = reading?.anchor
+      ? [{ id: "murphy-context", time: toChartTime(reading.anchor.time),
+          position: "aboveBar", shape: "circle", color: "#b2a4ff", text: reading.anchor.label }]
+      : [];
     const activePlan = data.overlays.plans.at(-1);
     const caseStudyPlan = data.overlays.caseStudy;
     const targetMarkers: SeriesMarker<Time>[] =
@@ -703,7 +757,7 @@ export function ProfessionalChart({
             ]
           : [];
     refs.markerPlugin.setMarkers(
-      [...compactPatternMarkers, ...targetMarkers].sort(
+      [...compactPatternMarkers, ...targetMarkers, ...contextMarkers].sort(
         (left, right) => Number(left.time) - Number(right.time),
       ),
     );
@@ -797,7 +851,20 @@ export function ProfessionalChart({
       resetView();
     }
     window.requestAnimationFrame(drawOverlay);
-  }, [data, groups, layers, resetView, drawOverlay, timeframe, lowerPanel, oscillatorData]);
+  }, [data, groups, layers, resetView, drawOverlay, timeframe, lowerPanel, oscillatorData, reading]);
+
+  useEffect(() => {
+    const refs = chartRef.current;
+    if (!refs || highlightTime == null) return;
+    const index = data.candles.findIndex(candle => Number(candle.t) === highlightTime);
+    if (index < 0) return;
+    const range = refs.chart.timeScale().getVisibleLogicalRange();
+    // SOURCE: preserve the user's current zoom and center the selected candle symmetrically.
+    const span = range ? range.to - range.from : INITIAL_VISIBLE_BARS;
+    refs.chart.timeScale().setVisibleLogicalRange({ from: index - span / 2, to: index + span / 2 });
+    refs.chart.setCrosshairPosition(data.candles[index].c, toChartTime(highlightTime), refs.candles);
+    setCrosshairBar(data.candles[index]);
+  }, [highlightTime, data.candles]);
 
   useEffect(() => {
     setDrawings((current) =>
@@ -932,6 +999,8 @@ export function ProfessionalChart({
       data-bars={data.candles.length}
       data-lower-panel={lowerPanel}
       data-marker-count={layers.patterns ? groups.length : 0}
+      data-setup={reading?.setup ?? ""}
+      data-setup-time={reading?.anchor?.time ?? ""}
       data-visible-range={visibleRange}
       aria-label={`${symbol} ${timeframe} interactive candlestick chart`}
     >
@@ -983,6 +1052,15 @@ export function ProfessionalChart({
         </div>
       </div>
 
+      {reading && (
+        <section className="chart-reading-strip" data-testid="chart-setup" aria-live="polite">
+          <span>{reading.kicker}</span><strong>{reading.setup}</strong>
+          {reading.anchor && <time>{formatTime(reading.anchor.time)} UTC · violet marker on candle</time>}
+          <p>{reading.steps.map(step => `${step.label}: ${step.value}`).join(" · ")}</p>
+          <details><summary>Why this reading?</summary><p>{reading.because}</p></details>
+        </section>
+      )}
+
       <div className="professional-chart-stage">
         <div ref={containerRef} className="lightweight-chart-host" />
         <canvas
@@ -1009,10 +1087,14 @@ export function ProfessionalChart({
           </div>
         )}
 
-        {selectedGroup && layers.patterns && (
+        <span className="chart-engine-badge">Interactive engine · closed bars</span>
+        {lowerPanel !== "none" && <span className="mw-pane-label">{lowerPanel === "volume" ? "Volume" : lowerPanel === "rsi" ? "RSI 14" : "MACD 12 / 26 / 9"}</span>}
+      </div>
+
+      {selectedGroup && layers.patterns && (
           <aside className="pattern-detail-card" aria-live="polite">
             <header>
-              <span>Pattern evidence</span>
+              <span>Pattern on this candle</span>
               <button
                 type="button"
                 aria-label="Close pattern details"
@@ -1028,12 +1110,17 @@ export function ProfessionalChart({
             </strong>
             <dl>
               <div>
-                <dt>Known</dt>
-                <dd>{formatTime(Number(selectedGroup.knownTime) * 1000)}</dd>
+                <dt>Candle</dt>
+                <dd>{formatTime(selectedGroup.patterns[0].time)}</dd>
               </div>
               <div>
-                <dt>Signal</dt>
-                <dd>{formatTime(selectedGroup.patterns[0].time)}</dd>
+                <dt>Known at close</dt>
+                <dd>
+                  {formatTime(
+                    selectedGroup.patterns[0].knownAt ??
+                      selectedGroup.patterns[0].time,
+                  )}
+                </dd>
               </div>
             </dl>
             <ul>
@@ -1055,11 +1142,6 @@ export function ProfessionalChart({
           </aside>
         )}
 
-        <span className="chart-engine-badge">
-          Interactive engine · closed bars
-        </span>
-        {lowerPanel !== "none" && <span className="mw-pane-label">{lowerPanel === "volume" ? "Volume" : lowerPanel === "rsi" ? "RSI 14" : "MACD 12 / 26 / 9"}</span>}
-      </div>
       <p className="sr-only">
         Pan with drag, zoom with the mouse wheel or pinch, inspect with the
         crosshair, and use Fit to restore the latest visible bars.

@@ -24,8 +24,9 @@ live account monitor or proof of profitability.
 - One main chart with separate indicator controls. EMA periods, Bollinger Bands,
   confirmed swing geometry and candle markers are optional price overlays.
 - A lower pane can show volume, Wilder RSI, MACD or be hidden entirely.
-- Analysis is hidden by default; choose timeframe comparison, explained
-  trend/location context, candle shapes or the saved BTC case.
+- Analysis is hidden by default. Trend & location (Murphy) draws EMA and
+  Bollinger Bands and names the last-bar setup on the chart. Candlestick
+  patterns marks the candles that formed them.
 - Recorded markets have a replay cursor, previous/next bar and end controls.
   Indicators and higher-timeframe aggregates use only the selected prefix.
 - Export contains the current interval's candles through the replay cursor,

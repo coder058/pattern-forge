@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ProfessionalChart,
+  type ChartReading,
   type ProfessionalDrawTool,
   type ProfessionalLayerState,
 } from "./ProfessionalChart";
@@ -11,6 +12,7 @@ import {
   calculateChart,
   DEFAULT_INDICATORS,
   macd,
+  murphyReading,
   rsi,
   summarize,
   type Bar,
@@ -69,12 +71,13 @@ export default function MarketWorkspace() {
   const [replayCount, setReplayCount] = useState<number | null>(null);
   const [fastPeriod, setFastPeriod] = useState(DEFAULT_INDICATORS.fast);
   const [slowPeriod, setSlowPeriod] = useState(DEFAULT_INDICATORS.slow);
+  const [highlightTime, setHighlightTime] = useState<number | null>(null);
   const [lowerPanel, setLowerPanel] = useState<
     "none" | "volume" | "rsi" | "macd"
   >("volume");
   const workspaceRef = useRef<HTMLElement>(null);
   const source = SOURCES.find((s) => s.id === sourceId)!;
-  const intervals = SOURCE_INTERVALS(source);
+  const intervals = useMemo(() => SOURCE_INTERVALS(source), [source]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -187,9 +190,52 @@ export default function MarketWorkspace() {
           : undefined,
     [bars, lowerPanel],
   );
-  const summary = useMemo(() => summarize(bars), [bars]);
+  const murphy = useMemo(() => murphyReading(bars, fastPeriod, slowPeriod), [bars, fastPeriod, slowPeriod]);
   const last = bars.at(-1),
     first = bars[0];
+  const lastPatterns = useMemo(
+    () =>
+      last ? chart.overlays.patterns.filter((p) => Number(p.time) === last.t) : [],
+    [chart.overlays.patterns, last],
+  );
+  const chartReading = useMemo((): ChartReading | null => {
+    if (analysis === "context") {
+      return {
+        kicker: "Murphy reading · last closed bar",
+        setup: murphy.setup,
+        steps: [
+          { n: "01", label: "Direction", value: murphy.trend },
+          { n: "02", label: "Location", value: murphy.location },
+          {
+            n: "03",
+            label: "Momentum",
+            value:
+              murphy.rsi === undefined ? "RSI —" : `RSI ${murphy.rsi.toFixed(1)}`,
+          },
+        ],
+        because: murphy.because,
+        anchor: last ? { time: last.t, label: murphy.setup } : undefined,
+      };
+    }
+    if (analysis === "patterns") {
+      return {
+        kicker: "Candle shape · last closed bar",
+        setup: lastPatterns.length
+          ? lastPatterns.map((p) => p.name).join(" · ")
+          : "No catalogued shape on this bar",
+        steps: [
+          {
+            n: "01",
+            label: "Geometry",
+            value: lastPatterns[0]?.variant ?? "Body and wicks did not match the detector.",
+          },
+        ],
+        because:
+          "Shapes describe this closed candle only. They are not a next-bar forecast.",
+      };
+    }
+    return null;
+  }, [analysis, lastPatterns, murphy, last]);
   const periodChange = last && first ? (last.c / first.o - 1) * 100 : undefined;
   const filtered = SOURCES.filter((s) =>
     `${s.symbol} ${s.label} ${s.group}`
@@ -217,6 +263,21 @@ export default function MarketWorkspace() {
   };
   const toggle = (layer: keyof ProfessionalLayerState) =>
     setLayers((value) => ({ ...value, [layer]: !value[layer] }));
+  const chooseAnalysis = (next: Analysis) => {
+    setAnalysis(next);
+    setHighlightTime(null);
+    if (next === "context") {
+      setLayers((value) => ({
+        ...value,
+        ema: true,
+        bollinger: true,
+        patterns: false,
+      }));
+    }
+    if (next === "patterns") {
+      setLayers((value) => ({ ...value, patterns: true }));
+    }
+  };
   const exportData = () => {
     const document = {
       source: {
@@ -373,7 +434,7 @@ export default function MarketWorkspace() {
               />
               Candlestick markers
             </label>
-            <p>Geometric shapes only. Read their meaning under Analysis.</p>
+            <p>Geometric shapes drawn on the candle that formed them. Open Analysis to read the names.</p>
           </div>
         </details>
         <label className="mw-analysis-select">
@@ -381,7 +442,7 @@ export default function MarketWorkspace() {
           <select
             aria-label="Analysis panel"
             value={analysis}
-            onChange={(e) => setAnalysis(e.target.value as Analysis)}
+            onChange={(e) => chooseAnalysis(e.target.value as Analysis)}
           >
             <option value="none">Hidden</option>
             <option value="timeframes">Compare timeframes</option>
@@ -604,6 +665,8 @@ export default function MarketWorkspace() {
                 symbol={source.symbol}
                 lowerPanel={lowerPanel}
                 oscillatorData={oscillatorData}
+                reading={chartReading}
+                highlightTime={highlightTime}
               />
             )}
           </div>
@@ -656,14 +719,14 @@ export default function MarketWorkspace() {
                 {analysis === "timeframes"
                   ? "Timeframes"
                   : analysis === "context"
-                    ? "Trend & location"
+                    ? "Murphy setup"
                     : analysis === "patterns"
                       ? "Candle patterns"
                       : "Saved BTC case"}
               </h2>
               <button
                 aria-label="Close analysis"
-                onClick={() => setAnalysis("none")}
+                onClick={() => chooseAnalysis("none")}
               >
                 ×
               </button>
@@ -708,27 +771,25 @@ export default function MarketWorkspace() {
               <>
                 <p>
                   A simple reading order inspired by John J. Murphy: direction
-                  first, then price location and momentum. No combined score.
+                  first, then price location and momentum. The same setup is
+                  drawn on the last closed bar. No combined score.
                 </p>
                 <article>
+                  <h3>Setup on the chart</h3>
+                  <strong>{murphy.setup}</strong>
+                  <p>{murphy.because}</p>
+                </article>
+                <article>
                   <h3>01 / Direction</h3>
-                  <strong>{summary.trend}</strong>
+                  <strong>{murphy.trend}</strong>
                   <p>
-                    Rising: close above EMA 20 above EMA 50. Falling: the
+                    Rising: close above EMA {fastPeriod} above EMA {slowPeriod}. Falling: the
                     reverse. Mixed: the averages and price disagree.
                   </p>
                 </article>
                 <article>
                   <h3>02 / Location</h3>
-                  <strong>
-                    {!last || !chart.overlays.bollinger.upper.length
-                      ? "Needs 20 bars"
-                      : last.c > chart.overlays.bollinger.upper.at(-1)!.value
-                        ? "Above upper band"
-                        : last.c < chart.overlays.bollinger.lower.at(-1)!.value
-                          ? "Below lower band"
-                          : "Inside Bollinger Bands"}
-                  </strong>
+                  <strong>{murphy.location}</strong>
                   <p>
                     Position within the recent closing-price distribution.
                     Outside a band does not by itself imply a reversal.
@@ -736,7 +797,11 @@ export default function MarketWorkspace() {
                 </article>
                 <article>
                   <h3>03 / Momentum</h3>
-                  <strong>RSI {summary.rsi?.toFixed(1) ?? "—"}</strong>
+                  <strong>
+                    {murphy.rsi === undefined
+                      ? "RSI —"
+                      : `RSI ${murphy.rsi.toFixed(1)}`}
+                  </strong>
                   <p>
                     Wilder RSI (14) compares recent gains with losses on a 0–100
                     scale. A high value is not an automatic sell.
@@ -744,14 +809,15 @@ export default function MarketWorkspace() {
                 </article>
                 <p className="mw-note">
                   Descriptive context, not a complete implementation of Murphy’s
-                  framework or a calibrated strategy.
+                  framework or a calibrated strategy. EMA and Bollinger Bands
+                  turn on with this panel so the setup is visible.
                 </p>
               </>
             ) : analysis === "patterns" ? (
               <>
                 <p>
-                  Shapes formed by closed candles. They describe the candle body
-                  and wicks, not what price will do next.
+                  Shapes formed by closed candles, marked on those candles.
+                  They describe the body and wicks, not what price will do next.
                 </p>
                 <label className="mw-marker-toggle">
                   <input
@@ -766,11 +832,20 @@ export default function MarketWorkspace() {
                   .reverse()
                   .slice(0, RECENT_PATTERN_LIMIT)
                   .map((pattern, i) => (
-                    <article key={`${pattern.time}-${i}`}>
+                    <button
+                      type="button"
+                      className={
+                        highlightTime === Number(pattern.time)
+                          ? "mw-pattern-hit is-active"
+                          : "mw-pattern-hit"
+                      }
+                      key={`${pattern.time}-${i}`}
+                      onClick={() => setHighlightTime(Number(pattern.time))}
+                    >
                       <h3>{pattern.name}</h3>
                       <time>{stamp(Number(pattern.time))}</time>
                       <p>{pattern.variant}</p>
-                    </article>
+                    </button>
                   ))}
                 {!chart.overlays.patterns.length && (
                   <p>No matching shapes in this slice.</p>

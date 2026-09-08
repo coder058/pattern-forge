@@ -14,6 +14,9 @@ test('introduction explains how to start and distinguishes snapshots from record
   assert.match(workspace, /Open BTC 5m/);
   assert.match(workspace, /SOURCE_INTERVALS\(next\)\[0\]/);
   assert.match(workspace, /interval === active.base/);
+  assert.match(workspace, /chooseAnalysis/);
+  assert.match(workspace, /ema: true,\s*bollinger: true/);
+  assert.match(workspace, /Murphy reading/);
   assert.doesNotMatch(workspace, /kind === "recording" \? "1h"/);
 });
 

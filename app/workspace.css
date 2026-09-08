@@ -485,11 +485,28 @@
   line-height: 1.7;
   color: #9daac0;
 }
-.mw-analysis article {
+.mw-analysis article,
+.mw-analysis .mw-pattern-hit {
   padding: 16px 0;
   border-bottom: 1px solid var(--line);
 }
-.mw-analysis article h3 {
+.mw-analysis .mw-pattern-hit {
+  background: transparent;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-radius: 0;
+  color: inherit;
+  display: block;
+  text-align: left;
+  width: 100%;
+}
+.mw-analysis .mw-pattern-hit:hover,
+.mw-analysis .mw-pattern-hit.is-active {
+  background: #171d29;
+}
+.mw-analysis article h3,
+.mw-analysis .mw-pattern-hit h3 {
   font-size: 14px;
   font-weight: 500;
   color: #b5aee2;
@@ -499,10 +516,12 @@
   font-size: 17px;
   font-weight: 500;
 }
-.mw-analysis article p {
+.mw-analysis article p,
+.mw-analysis .mw-pattern-hit p {
   margin-bottom: 0;
 }
-.mw-analysis article time {
+.mw-analysis article time,
+.mw-analysis .mw-pattern-hit time {
   color: var(--muted);
   font-size: 10px;
 }
@@ -559,7 +578,8 @@
 }
 .market-workspace .professional-chart {
   background: #0b0f16;
-  grid-template-rows: 32px minmax(0, 1fr);
+  /* Match the chart's four children: controls, explanation, plot, evidence. */
+  grid-template-rows: 32px auto minmax(220px, 1fr) auto;
 }
 .market-workspace .professional-chart-controls {
   background: #10151e;
@@ -740,6 +760,35 @@
   background: #0b0f16c9;
   padding: 3px 6px;
 }
+/* Selected evidence belongs beside the plot, never over the candle bodies. */
+.market-workspace .pattern-detail-card {
+  position: static;
+  width: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 14px 18px;
+}
+.chart-reading-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  padding: 12px 18px;
+  background: #111924;
+  border-block: 1px solid #2a3548;
+  color: #a5b2c4;
+  font-size: 12px;
+}
+.chart-reading-strip > span { font-size: 10px; color: #b2a4ff; text-transform: uppercase; }
+.chart-reading-strip > strong { color: #e8eef6; font-size: 15px; }
+.chart-reading-strip > time { font: 10px var(--font-mono); }
+.chart-reading-strip > p { width: 100%; margin: 0; line-height: 1.6; }
+.chart-reading-strip details { width: 100%; }
+.chart-reading-strip summary { cursor: pointer; color: #b6c4d8; }
+.chart-reading-strip details p { max-width: 85ch; line-height: 1.6; }
 /* SOURCE: on small screens the always-available market select replaces the sidebar. */
 @media (max-width: 900px) {
   .mw-toolbar > button:first-child {

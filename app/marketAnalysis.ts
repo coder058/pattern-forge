@@ -328,8 +328,8 @@ export function macd(bars: Bar[]) {
   };
 }
 
-export function summarize(bars: Bar[]) {
-  const chart = calculateChart(bars),
+export function summarize(bars: Bar[], fastPeriod = DEFAULT_INDICATORS.fast, slowPeriod = DEFAULT_INDICATORS.slow) {
+  const chart = calculateChart(bars, fastPeriod, slowPeriod),
     last = bars.at(-1),
     fast = chart.overlays.ema.at(-1)?.value,
     slow = chart.overlays.emaSlow.at(-1)?.value;
@@ -345,5 +345,102 @@ export function summarize(bars: Bar[]) {
             : "Mixed",
     rsi: rsi(bars).at(-1)?.value,
     count: bars.length,
+  };
+}
+
+export type MurphyLocation =
+  | "Needs 20 bars"
+  | "Above upper band"
+  | "Below lower band"
+  | "Inside Bollinger Bands";
+
+export type MurphyReading = {
+  trend: string;
+  location: MurphyLocation;
+  rsi?: number;
+  setup: string;
+  because: string;
+};
+
+function bandLocation(
+  last: Bar | undefined,
+  upper?: number,
+  lower?: number,
+): MurphyLocation {
+  if (!last || upper === undefined || lower === undefined) return "Needs 20 bars";
+  if (last.c > upper) return "Above upper band";
+  if (last.c < lower) return "Below lower band";
+  return "Inside Bollinger Bands";
+}
+
+/** Last-bar reading only. Not a score, entry or Murphy textbook replica. */
+export function murphyReading(bars: Bar[], fastPeriod = DEFAULT_INDICATORS.fast, slowPeriod = DEFAULT_INDICATORS.slow): MurphyReading {
+  const summary = summarize(bars, fastPeriod, slowPeriod);
+  const chart = calculateChart(bars, fastPeriod, slowPeriod);
+  const location = bandLocation(
+    summary.last,
+    chart.overlays.bollinger.upper.at(-1)?.value,
+    chart.overlays.bollinger.lower.at(-1)?.value,
+  );
+  const rsiText =
+    summary.rsi === undefined ? "RSI is still warming up." : `Wilder RSI 14 is ${summary.rsi.toFixed(1)}.`;
+  if (summary.trend === "Warming up" || location === "Needs 20 bars") {
+    return {
+      trend: summary.trend,
+      location,
+      rsi: summary.rsi,
+      setup: "Waiting for a full window",
+      because: `Direction needs EMA ${Math.max(fastPeriod, slowPeriod)}; location needs ${DEFAULT_INDICATORS.bandPeriod} closes. ${rsiText}`,
+    };
+  }
+  const pair = `${summary.trend}|${location}` as const;
+  const named: Record<string, [string, string]> = {
+    "Rising|Inside Bollinger Bands": [
+      "Uptrend, within bands",
+      `Close is above EMA ${fastPeriod} above EMA ${slowPeriod}, still inside the 20-bar envelope.`,
+    ],
+    "Rising|Above upper band": [
+      "Uptrend, extended high",
+      "Close is above both averages and the upper band. Extension is not a sell.",
+    ],
+    "Rising|Below lower band": [
+      "Uptrend, stretched low",
+      "Close is above the fast average, which is above the slow average, but below the lower band.",
+    ],
+    "Falling|Inside Bollinger Bands": [
+      "Downtrend, within bands",
+      `Close is below EMA ${fastPeriod} below EMA ${slowPeriod}, still inside the 20-bar envelope.`,
+    ],
+    "Falling|Below lower band": [
+      "Downtrend, extended low",
+      "Close is below both averages and the lower band. Extension is not a buy.",
+    ],
+    "Falling|Above upper band": [
+      "Downtrend, stretched high",
+      "Close is below the fast average, which is below the slow average, but above the upper band.",
+    ],
+    "Mixed|Inside Bollinger Bands": [
+      "No aligned trend",
+      "Price and the two averages disagree. Location is still inside the envelope.",
+    ],
+    "Mixed|Above upper band": [
+      "Averages disagree, extended high",
+      "Trend filters do not line up, and the close is above the upper band.",
+    ],
+    "Mixed|Below lower band": [
+      "Averages disagree, extended low",
+      "Trend filters do not line up, and the close is below the lower band.",
+    ],
+  };
+  const [setup, because] = named[pair] ?? [
+    `${summary.trend}, ${location}`,
+    "Last closed bar only; not a combined score.",
+  ];
+  return {
+    trend: summary.trend,
+    location,
+    rsi: summary.rsi,
+    setup,
+    because: `${because} ${rsiText}`,
   };
 }
