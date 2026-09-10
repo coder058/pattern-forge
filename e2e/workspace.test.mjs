@@ -88,8 +88,10 @@ for (const viewport of viewports) {
       await page.mouse.down();
       await page.mouse.move(visiblePlot.x + plot.width / 2, visiblePlot.y + plot.height / 2);
       await page.mouse.up();
+      await page.waitForFunction(() => document.querySelector('[aria-label="Undo chart drawing"]')?.disabled === false);
       assert.equal(await page.getByRole('button',{name:'Undo chart drawing'}).isEnabled(), true);
       await page.getByRole('button',{name:'Clear drawings',exact:true}).click();
+      await page.waitForFunction(() => document.querySelector('[aria-label="Undo chart drawing"]')?.disabled === true);
       assert.equal(await page.getByRole('button',{name:'Undo chart drawing'}).isEnabled(), false);
       await page.getByRole('combobox',{name:'Market',exact:true}).selectOption('saved-btc');
       await page.getByRole('combobox',{name:'Analysis panel'}).selectOption('case');
