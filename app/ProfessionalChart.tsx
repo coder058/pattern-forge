@@ -151,9 +151,6 @@ export type ChartReading = {
   anchor?: { time: number; label: string };
 };
 
-// GUESS: UNCALIBRATED GUESS — name the most recent markers only so the plot stays readable.
-const NAMED_MARKER_LIMIT = 8;
-
 type ChartRefs = {
   chart: IChartApi;
   candles: ISeriesApi<"Candlestick", Time>;
@@ -712,13 +709,14 @@ export function ProfessionalChart({
       layers.bollinger ? compactLineData(data.overlays.bollinger.lower) : [],
     );
 
-    const namedFrom = Math.max(0, groups.length - NAMED_MARKER_LIMIT);
-    const compactPatternMarkers = groups.map((group, index) =>
-      markerForGroup(group, index >= namedFrom),
+    // SOURCE: name only the chosen candle; other markers stay visible without
+    // overlapping labels. The result list retains every pattern name.
+    const compactPatternMarkers = groups.map((group) =>
+      markerForGroup(group, group.id === selectedGroup?.id),
     );
     const contextMarkers: SeriesMarker<Time>[] = reading?.anchor
       ? [{ id: "murphy-context", time: toChartTime(reading.anchor.time),
-          position: "aboveBar", shape: "circle", color: "#b2a4ff", text: reading.anchor.label }]
+          position: "aboveBar", shape: "circle", color: "#b2a4ff", text: "Setup" }]
       : [];
     const activePlan = data.overlays.plans.at(-1);
     const caseStudyPlan = data.overlays.caseStudy;
@@ -851,7 +849,7 @@ export function ProfessionalChart({
       resetView();
     }
     window.requestAnimationFrame(drawOverlay);
-  }, [data, groups, layers, resetView, drawOverlay, timeframe, lowerPanel, oscillatorData, reading]);
+  }, [data, groups, layers, resetView, drawOverlay, timeframe, lowerPanel, oscillatorData, reading, selectedGroup]);
 
   useEffect(() => {
     const refs = chartRef.current;
@@ -999,6 +997,8 @@ export function ProfessionalChart({
       data-bars={data.candles.length}
       data-lower-panel={lowerPanel}
       data-marker-count={layers.patterns ? groups.length : 0}
+      data-selected-pattern-time={selectedGroup?.knownTime ?? ""}
+      data-layers={Object.entries(layers).filter(([, enabled]) => enabled).map(([name]) => name).join(",")}
       data-setup={reading?.setup ?? ""}
       data-setup-time={reading?.anchor?.time ?? ""}
       data-visible-range={visibleRange}

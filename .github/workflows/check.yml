@@ -10,6 +10,10 @@ jobs:
     steps:
       # SOURCE: actions/checkout v4 commit resolved from the official repository.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      # SOURCE: setup-node v4, same pinned action used by the persistence job.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
       - name: Build app and run unit tests inside Docker
         run: docker build -t pattern-forge:test .
       - name: Check the running container and error contract
@@ -28,6 +32,9 @@ jobs:
           test "$(docker exec pattern-forge-test id -u)" != 0
           # Without a database the stored reader must say so, not appear healthy.
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/stored/BTC)" = 503
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run test:browser
 
   persistence:
     runs-on: ubuntu-latest

@@ -578,10 +578,14 @@
 }
 .market-workspace .professional-chart {
   background: #0b0f16;
-  /* Match the chart's four children: controls, explanation, plot, evidence. */
-  grid-template-rows: 32px auto minmax(220px, 1fr) auto;
+  /* SOURCE: explicit named rows keep the plot in place when optional panels
+     unmount. Plot dimensions are presentation choices, not market parameters. */
+  grid-template-areas: "controls" "reading" "plot" "evidence";
+  grid-template-rows: 32px auto clamp(320px, 55dvh, 620px) auto;
+  height: auto;
 }
 .market-workspace .professional-chart-controls {
+  grid-area: controls;
   background: #10151e;
   border-color: var(--line);
 }
@@ -762,6 +766,7 @@
 }
 /* Selected evidence belongs beside the plot, never over the candle bodies. */
 .market-workspace .pattern-detail-card {
+  grid-area: evidence;
   position: static;
   width: auto;
   max-width: none;
@@ -772,6 +777,7 @@
   padding: 14px 18px;
 }
 .chart-reading-strip {
+  grid-area: reading;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -789,6 +795,15 @@
 .chart-reading-strip details { width: 100%; }
 .chart-reading-strip summary { cursor: pointer; color: #b6c4d8; }
 .chart-reading-strip details p { max-width: 85ch; line-height: 1.6; }
+/* SOURCE: grow with the plot and evidence rather than clipping them into a fixed
+   viewport. Sidebar limits and spacing are presentation-only choices. */
+.market-workspace .mw-body { height: auto; min-height: 0; align-items: start; }
+.market-workspace .mw-chart-panel { height: auto; min-height: 0; }
+.market-workspace .mw-chart-canvas { flex: none; }
+.market-workspace .mw-markets, .market-workspace .mw-analysis { max-height: 80dvh; }
+.market-workspace .mw-start { color: inherit; width: fit-content; text-underline-offset: .3em; }
+.market-workspace .mw-empty { min-height: 320px; gap: 8px; }
+.market-workspace .mw-analysis-select > select { max-width: 100%; }
 /* SOURCE: on small screens the always-available market select replaces the sidebar. */
 @media (max-width: 900px) {
   .mw-toolbar > button:first-child {

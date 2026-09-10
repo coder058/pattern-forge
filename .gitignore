@@ -3,5 +3,6 @@ node_modules/
 .next/
 .env*
 *.tsbuildinfo
+test-results/
 __pycache__/
 .github/

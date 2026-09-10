@@ -15,9 +15,27 @@ test('introduction explains how to start and distinguishes snapshots from record
   assert.match(workspace, /SOURCE_INTERVALS\(next\)\[0\]/);
   assert.match(workspace, /interval === active.base/);
   assert.match(workspace, /chooseAnalysis/);
-  assert.match(workspace, /ema: true,\s*bollinger: true/);
+  assert.match(workspace, /ema: next === "context"/);
+  assert.match(workspace, /bollinger: next === "context"/);
   assert.match(workspace, /Murphy reading/);
   assert.doesNotMatch(workspace, /kind === "recording" \? "1h"/);
+});
+
+test('plot uses an explicit grid area independently of optional reading and evidence', () => {
+  const globals = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
+  assert.match(globals, /\.professional-chart-stage \{\s*grid-area: plot/);
+  assert.match(css, /grid-template-areas: "controls" "reading" "plot" "evidence"/);
+  assert.match(css, /grid-area: reading/);
+  assert.match(css, /grid-area: evidence/);
+});
+
+test('setup selection draws overlays and public UI excludes an unconfigured database', () => {
+  assert.match(workspace, /drawn automatically on the chart/);
+  assert.match(workspace, /aria-label="Candlestick pattern"/);
+  assert.match(workspace, /storedEnabled \|\| s.kind !== "stored"/);
+  assert.match(workspace, /Open saved BTC recording/);
+  const page = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
+  assert.match(page, /storedEnabled=\{Boolean\(process.env.DATABASE_URL\)\}/);
 });
 
 test('introduction has no viewport-height gate and controls expose keyboard focus', () => {

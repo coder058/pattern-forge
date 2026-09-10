@@ -24,9 +24,17 @@ live account monitor or proof of profitability.
 - One main chart with separate indicator controls. EMA periods, Bollinger Bands,
   confirmed swing geometry and candle markers are optional price overlays.
 - A lower pane can show volume, Wilder RSI, MACD or be hidden entirely.
-- Analysis is hidden by default. Trend & location (Murphy) draws EMA and
-  Bollinger Bands and names the last-bar setup on the chart. Candlestick
-  patterns marks the candles that formed them.
+- Choose a market and timeframe, then **Setup / pattern**. Murphy draws EMA and
+  Bollinger Bands and names the last-bar reading. EMA, Bollinger location and
+  confirmed swings are also available separately. These are descriptive setups,
+  not calibrated trading strategies or a complete implementation of a textbook.
+- Candlestick patterns can be filtered by shape. Select a result to centre its
+  candle and read the evidence; only the selected marker is named to avoid clutter.
+- Drawing tools add your own annotations; analytical overlays draw automatically.
+- The price chart has a dedicated layout row even when analysis is closed.
+  Selected evidence expands below it instead of hiding the plot.
+- Stored candles appear only when the running server has `DATABASE_URL` configured.
+  A failed public price source offers an explicitly historical BTC recording.
 - Recorded markets have a replay cursor, previous/next bar and end controls.
   Indicators and higher-timeframe aggregates use only the selected prefix.
 - Export contains the current interval's candles through the replay cursor,
@@ -35,6 +43,16 @@ live account monitor or proof of profitability.
 The public root renders `MarketWorkspace.tsx`. Older local research integration
 files are excluded from this publication. It does not render the old inspector,
 Scenario Lab, account metrics or localhost polling.
+
+### Browser regression checks
+
+Start a built application, then run `npm run test:browser` (set `PF_BASE_URL`
+if it is not on `http://127.0.0.1:3000`). Install Chromium once with
+`npx playwright install chromium`. The tests use a **SYNTHETIC HTTP envelope**
+around committed recorded candles, not live market results. They cover the
+initial chart, each analysis preset, shape filters, replay, drawing controls,
+source failure and desktop/narrow/mobile viewports. Set `PF_SCREENSHOT_DIR`
+to save local screenshots. This is UI regression coverage, not a latency benchmark.
 
 ## Recordings
 

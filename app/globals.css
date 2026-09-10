@@ -2538,6 +2538,7 @@ button.matrix-row.is-active {
      Without an explicit row for the reading strip, CSS Grid gives it the
      flexible row and collapses the actual chart stage to zero height. */
   grid-template-rows: 36px auto minmax(220px, 1fr) auto;
+  grid-template-areas: "controls" "reading" "plot" "evidence";
   height: 100%;
   min-height: 0;
   outline: none;
@@ -2610,6 +2611,7 @@ button.matrix-row.is-active {
 }
 
 .professional-chart-stage {
+  grid-area: plot;
   min-height: 0;
   overflow: hidden;
   position: relative;

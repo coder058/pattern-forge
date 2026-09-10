@@ -1,4 +1,8 @@
 tests
+e2e
+test-results
+AGENTS.md
+CLAUDE.md
 scripts
 README.md
 *.tsbuildinfo
