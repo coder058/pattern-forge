@@ -27,6 +27,11 @@ for (const viewport of viewports) {
       await page.route('**/api/markets/BTC', route => route.fulfill({json:SYNTHETIC_SNAPSHOT}));
       await page.goto(baseURL);
       const chart = page.getByTestId('professional-market-chart');
+      // SOURCE: React commits UI state after the input event; wait for the observable
+      // contract instead of assuming selectOption/click synchronously renders it.
+      const waitChartAttribute = (name, value) => page.waitForFunction(({name,value}) =>
+        document.querySelector('[data-testid="professional-market-chart"]')?.getAttribute(name) === value,
+        {name,value});
       await chart.locator('canvas').first().waitFor();
       const assertPlot = async () => {
         const box = await page.locator('.professional-chart-stage').boundingBox();
@@ -38,6 +43,7 @@ for (const viewport of viewports) {
       assert.equal(await page.locator('option[value="stored-BTC"]').count(), 0);
       for (const [value, layers] of [['context',['ema','bollinger']],['ema',['ema']],['bands',['bollinger']],['swings',['trendlines']],['patterns',['patterns']],['timeframes',[]],['none',[]]]) {
         await page.getByRole('combobox',{name:'Analysis panel'}).selectOption(value);
+        await waitChartAttribute('data-layers', layers.join(','));
         await assertPlot();
         const actual = (await chart.getAttribute('data-layers')).split(',').filter(Boolean);
         assert.deepEqual(actual, layers, `${value}: unexpected overlays`);
@@ -53,6 +59,7 @@ for (const viewport of viewports) {
       }
       assert.ok(Number(await chart.getAttribute('data-marker-count')) > 0);
       await page.locator('.mw-pattern-hit').first().click();
+      await page.waitForFunction(() => Boolean(document.querySelector('[data-testid="professional-market-chart"]')?.getAttribute('data-selected-pattern-time')));
       assert.notEqual(await chart.getAttribute('data-selected-pattern-time'), '');
       await page.waitForFunction(() => {
         const plot = document.querySelector('.professional-chart-stage').getBoundingClientRect();
@@ -65,6 +72,7 @@ for (const viewport of viewports) {
       await page.getByRole('combobox',{name:'Analysis panel'}).selectOption('context');
       const fullCount = Number(await chart.getAttribute('data-bars'));
       await page.getByRole('button',{name:'Previous replay candle'}).click();
+      await waitChartAttribute('data-bars', String(fullCount - 1));
       assert.equal(Number(await chart.getAttribute('data-bars')), fullCount - 1);
       await assertPlot();
       for (const pane of ['rsi','macd','none','volume']) {
