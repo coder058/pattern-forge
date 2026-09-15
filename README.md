@@ -200,6 +200,19 @@ duplicate and restart behaviour is checked against a real PostgreSQL server in
 CI, using the recorded payload; the counts describe one statement's view, not
 concurrent ingesters.
 
+## Deployment boundary
+
+Deploy the Next.js application from the repository root. `ingest/` is a Python
+CLI/batch worker, not an ASGI application: it has no HTTP entrypoint and should
+not be imported as a separate Vercel web project. Its `vercel.json` disables
+automatic Git deployments for projects rooted in that subdirectory; the root
+Pattern Forge application remains enabled. This prevents the repeated "No
+python entrypoint found" failure without inventing a server around a worker.
+The existing failed deployment records remain historical evidence, not successful
+worker runs. Run the worker through the documented local/Compose workflow.
+
+Source: [Vercel Git deployment configuration](https://vercel.com/docs/project-configuration/git-configuration).
+
 ## A reproducible investigation
 
 Choose recorded Gold, move the replay cursor back, then enable timeframe
