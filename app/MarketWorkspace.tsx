@@ -9,6 +9,7 @@ import {
 } from "./ProfessionalChart";
 import {
   aggregateBars,
+  formingFourHour,
   calculateChart,
   DEFAULT_INDICATORS,
   macd,
@@ -32,7 +33,7 @@ type Analysis = "none" | "timeframes" | "context" | "patterns" | "case" | "ema" 
 const PATTERN_NAMES = ["Doji", "Hammer shape", "Shooting-star shape", "Bullish engulfing", "Bearish engulfing"];
 // SOURCE: editorial defaults: uncluttered chart, optional analytical layers.
 const DEFAULT_LAYERS: ProfessionalLayerState = {
-  ema: true,
+  ema: false,
   bollinger: false,
   trendlines: false,
   patterns: false,
@@ -74,10 +75,11 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   const [fastPeriod, setFastPeriod] = useState(DEFAULT_INDICATORS.fast);
   const [slowPeriod, setSlowPeriod] = useState(DEFAULT_INDICATORS.slow);
   const [highlightTime, setHighlightTime] = useState<number | null>(null);
-  const [patternName, setPatternName] = useState("all");
+  const [patternName, setPatternName] = useState("Bullish engulfing");
+  const [previewForming, setPreviewForming] = useState(false);
   const [lowerPanel, setLowerPanel] = useState<
     "none" | "volume" | "rsi" | "macd"
-  >("volume");
+  >("none");
   const workspaceRef = useRef<HTMLElement>(null);
   const source = SOURCES.find((s) => s.id === sourceId)!;
   const availableSources = SOURCES.filter((s) => storedEnabled || s.kind !== "stored");
@@ -181,6 +183,11 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
     [active, cutoff, intervals],
   );
   const bars = frames[timeframe] ?? [];
+  const canPreview = source.kind === "recording" && replayBase === "1h" && timeframe === "4h" &&
+    analysis === "patterns" && (patternName === "all" || patternName.endsWith("engulfing"));
+  const showingForming = canPreview && previewForming;
+  const provisional = useMemo(() => showingForming ? formingFourHour(baseBars, cutoff) : null,
+    [showingForming, baseBars, cutoff]);
   const chart = useMemo(
     () => {
       const result = calculateChart(bars, fastPeriod, slowPeriod);
@@ -201,14 +208,36 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   const murphy = useMemo(() => murphyReading(bars, fastPeriod, slowPeriod), [bars, fastPeriod, slowPeriod]);
   const last = bars.at(-1),
     first = bars[0];
+  const latestPatternTime = chart.overlays.patterns.at(-1)?.time;
+  // SOURCE: a selection must belong to this replay prefix; otherwise use its latest match.
+  const focusedPatternTime = analysis === "patterns" && !showingForming
+    ? (chart.overlays.patterns.some(p => Number(p.time) === highlightTime)
+      ? highlightTime : latestPatternTime === undefined ? null : Number(latestPatternTime))
+    : null;
+  const visibleLayers = useMemo(() => ({ ...layers,
+    patterns: showingForming ? false : analysis === "patterns" || layers.patterns,
+  }), [analysis, layers, showingForming]);
   const displayedPatterns = useMemo(
     () => {
-      const time = highlightTime ?? chart.overlays.patterns.at(-1)?.time;
+      const time = focusedPatternTime;
       return chart.overlays.patterns.filter((p) => Number(p.time) === Number(time));
     },
-    [chart.overlays.patterns, highlightTime],
+    [chart.overlays.patterns, focusedPatternTime],
   );
   const chartReading = useMemo((): ChartReading | null => {
+    if (showingForming) {
+      const match = provisional?.shape && (patternName === "all" || patternName === provisional.shape);
+      return {
+        kicker: "Forming preview · closed 1h observations only",
+        setup: provisional ? (match ? `${provisional.shape} · provisional` : "No selected engulfing shape yet") : "No partial 4h candle available",
+        steps: [{ n: "01", label: "As observed", value: provisional
+          ? `${provisional.parts} of 4 hourly bars · through ${stamp(provisional.through)} UTC`
+          : "At a complete boundary, or with missing hours, no provisional candle is drawn. Step forward or choose another replay position." }],
+        because: "The amber candle can change or disappear as more hourly bars arrive. No intrahour ticks are inferred. Confirmed indicators and exports still use closed 4h candles only.",
+        provisional: true,
+        anchor: provisional ? { time: provisional.bar.t, label: "Forming" } : undefined,
+      };
+    }
     if (analysis === "context") {
       return {
         kicker: "Murphy reading · last closed bar",
@@ -229,7 +258,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
     }
     if (analysis === "patterns") {
       return {
-        kicker: highlightTime === null ? "Latest matching candle shape" : "Selected candle shape",
+        kicker: highlightTime === focusedPatternTime && highlightTime !== null ? "Selected closed shape" : "Latest matching closed shape",
         setup: displayedPatterns.length
           ? displayedPatterns.map((p) => p.name).join(" · ")
           : "No matching shape in this slice",
@@ -255,7 +284,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
       };
     }
     return null;
-  }, [analysis, displayedPatterns, murphy, last, fastPeriod, slowPeriod, highlightTime]);
+  }, [analysis, displayedPatterns, murphy, last, fastPeriod, slowPeriod, highlightTime, focusedPatternTime, showingForming, provisional, patternName]);
   const periodChange = last && first ? (last.c / first.o - 1) * 100 : undefined;
   const filtered = availableSources.filter((s) =>
     `${s.symbol} ${s.label} ${s.group}`
@@ -270,6 +299,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   }, [active, busy, frames, timeframe, intervals, replayCount]);
 
   const selectMarket = (id: string) => {
+    workspaceRef.current?.querySelectorAll("details[open]").forEach(el => el.removeAttribute("open"));
     const next = SOURCES.find((s) => s.id === id)!;
     setSourceId(id);
     setTimeframe(SOURCE_INTERVALS(next)[0]);
@@ -286,17 +316,14 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   const toggle = (layer: keyof ProfessionalLayerState) =>
     setLayers((value) => ({ ...value, [layer]: !value[layer] }));
   const chooseAnalysis = (next: Analysis) => {
+    workspaceRef.current?.querySelectorAll("details[open]").forEach(el => el.removeAttribute("open"));
     setAnalysis(next);
     setHighlightTime(null);
     setTool("inspect");
-    setLayers({
-      ...DEFAULT_LAYERS,
-      ema: next === "context" || next === "ema",
-      bollinger: next === "context" || next === "bands",
-      trendlines: next === "swings" || next === "case",
-      patterns: next === "patterns",
-    });
-    if (next === "context") setLowerPanel("rsi");
+    // SOURCE: explicit indicator presets add their layer; reading modes preserve user choices.
+    if (next === "ema") setLayers(value => ({ ...value, ema: true }));
+    if (next === "bands") setLayers(value => ({ ...value, bollinger: true }));
+    if (next === "swings" || next === "case") setLayers(value => ({ ...value, trendlines: true }));
     // SOURCE: explicit setup selection should reveal the plot below the introduction.
     requestAnimationFrame(() => workspaceRef.current?.querySelector("#workspace")?.scrollIntoView({ block: "start" }));
   };
@@ -332,10 +359,11 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
         <h1 id="pattern-forge-title">Pattern Forge</h1>
         <div>
           <p>Explore public crypto prices and recorded markets on one chart. Replay recalculates indicators using only candles available at that point, without looking ahead.</p>
-          <p>Choose a market and a timeframe below, then choose a setup or candlestick pattern. Its indicators and markers are drawn automatically on the chart. Select a pattern in the results to jump to that candle. For a recording, move the Replay slider back and step forward to watch the reading change.</p>
+          <p>Choose a market and a timeframe below, then choose Murphy or Candlestick patterns. Pattern markers are drawn automatically on the chart and the latest match comes into view. Indicators are optional. For a recording, move the Replay slider back and step forward to watch the reading change.</p>
         </div>
         <a className="mw-start" href="#workspace">Explore the chart ↓</a>
       </section>
+      <nav className="mw-project-nav" aria-label="Project guide"><a href="/about">How it works: data, database &amp; decisions →</a></nav>
       <header className="mw-header" id="workspace">
         <a className="mw-brand" href="#pattern-forge-title">
           Pattern Forge<span>Market workspace</span>
@@ -484,7 +512,6 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             <select aria-label="Candlestick pattern" value={patternName} onChange={e => {
               setPatternName(e.target.value);
               setHighlightTime(null);
-              setLayers(value => ({ ...value, patterns: true }));
             }}>
               <option value="all">All candle shapes</option>
               {PATTERN_NAMES.map(name => <option key={name} value={name}>{name}</option>)}
@@ -499,8 +526,8 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
           <div className="mw-popover">
             <h2>How to use this workspace</h2>
             <p>
-              Choose a market, then a setup or pattern. Overlays draw automatically;
-              Indicators lets you customise them. Draw is only for your own lines.
+              Choose a market, then a setup or pattern. Pattern markers draw automatically;
+              Indicators controls the optional overlays. Manual annotations are under Inspect tools.
               Public quotes update automatically; Refresh reloads the chart’s closed candles.
               Historical markets can be rewound with Replay.
             </p>
@@ -610,6 +637,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             </div>
             <div className="mw-price">
               <strong>{busy ? "—" : price(last?.c)}</strong>
+              <small>Last closed {timeframe} candle</small>
               {periodChange !== undefined && !busy && (
                 <span className={periodChange >= 0 ? "positive" : "negative"}>
                   {periodChange >= 0 ? "+" : ""}
@@ -625,6 +653,10 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             </p>
           )}
           <div className="mw-chart-tools">
+            {canPreview && <label><input type="checkbox" checked={previewForming} onChange={e => setPreviewForming(e.target.checked)} /> Preview forming 4h</label>}
+            <details className="mw-menu">
+              <summary>Inspect tools</summary>
+              <div className="mw-popover">
             <label>
               Draw
               <select
@@ -643,6 +675,9 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             <button onClick={() => setClearToken((n) => n + 1)}>
               Clear drawings
             </button>
+              </div>
+            </details>
+            {tool !== "inspect" && <button onClick={() => setTool("inspect")}>Exit drawing mode</button>}
             <label>
               Lower pane
               <select
@@ -665,7 +700,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                 </span>
               )}
               {layers.bollinger && <span className="bands">BB 20 / 2</span>}
-              {layers.patterns && <span>Patterns</span>}
+              {visibleLayers.patterns && <span>Patterns</span>}
               {layers.trendlines && <span>Swings</span>}
             </div>
           </div>
@@ -699,14 +734,15 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                 key={sourceId}
                 data={chart}
                 timeframe={timeframe}
-                layers={layers}
+                layers={visibleLayers}
                 tool={tool}
                 clearToken={clearToken}
                 symbol={source.symbol}
                 lowerPanel={lowerPanel}
                 oscillatorData={oscillatorData}
                 reading={chartReading}
-                highlightTime={highlightTime}
+                highlightTime={focusedPatternTime}
+                provisionalCandle={provisional?.bar}
               />
             )}
           </div>
@@ -761,7 +797,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                   : analysis === "context"
                     ? "Murphy setup"
                     : analysis === "patterns"
-                      ? "Candle patterns"
+                      ? showingForming ? "Earlier closed matches" : "Candle patterns"
                       : analysis === "ema" ? "EMA trend" : analysis === "bands" ? "Bollinger location" : analysis === "swings" ? "Confirmed swings" : "Saved BTC case"}
               </h2>
               <button
@@ -849,9 +885,9 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                 </article>
                 <p className="mw-note">
                   Descriptive context, not a complete implementation of Murphy’s
-                  framework or a calibrated strategy. EMA and Bollinger Bands
-                  turn on with this panel so the setup is visible.
+                  framework or a calibrated strategy. Indicators stay under your control.
                 </p>
+                <button onClick={() => setLayers(value => ({ ...value, ema: true, bollinger: true }))}>Show supporting indicators</button>
               </>
             ) : analysis === "ema" || analysis === "bands" || analysis === "swings" ? (
               <>
@@ -863,19 +899,13 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
               </>
             ) : analysis === "patterns" ? (
               <>
+                {showingForming ? <p>The amber candle is provisional. These results are older, closed shapes. Select one to leave the preview and inspect that match.</p> :
                 <p>
                   Shapes formed by closed candles, marked on those candles.
-                  Choose a shape above, then select a result below to centre its candle.
+                  Choose a shape above to focus the latest match. Select an earlier result below to inspect it.
                   They describe the body and wicks, not what price will do next.
-                </p>
-                <label className="mw-marker-toggle">
-                  <input
-                    type="checkbox"
-                    checked={layers.patterns}
-                    onChange={() => toggle("patterns")}
-                  />
-                  Show markers on chart
-                </label>
+                </p>}
+                <p>The match can be older than the last candle; check its timestamp. Both bodies matter for an engulfing shape.</p>
                 {chart.overlays.patterns
                   .slice()
                   .reverse()
@@ -890,6 +920,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                       }
                       key={`${pattern.time}-${i}`}
                       onClick={() => {
+                        setPreviewForming(false);
                         setHighlightTime(Number(pattern.time));
                         requestAnimationFrame(() => workspaceRef.current?.querySelector(".professional-chart")?.scrollIntoView({ block: "start" }));
                       }}

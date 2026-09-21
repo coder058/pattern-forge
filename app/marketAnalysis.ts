@@ -128,6 +128,29 @@ export function aggregateBars(
     });
 }
 
+/** A provisional 4h body from already-closed, contiguous 1h observations only.
+ * SOURCE: UTC interval boundaries above. Never reconstructs the path inside an hour.
+ * Input bars have already passed validateBars; output is NOT confirmed indicator input.
+ */
+export function formingFourHour(bars: Bar[], cutoff: number) {
+  const hour = INTERVAL_MS["1h"], span = INTERVAL_MS["4h"];
+  if (!Number.isSafeInteger(cutoff) || cutoff % hour || cutoff % span === 0) return null;
+  const start = Math.floor(cutoff / span) * span;
+  const group = bars.filter(b => b.t >= start && b.closeTime <= cutoff).sort((a, b) => a.t - b.t);
+  if (!group.length || group.length !== (cutoff - start) / hour ||
+    group.some((b, i) => !b.closed || b.t !== start + i * hour || b.closeTime !== b.t + hour)) return null;
+  const bar: Bar = { t: start, closeTime: start + span, o: group[0].o,
+    h: Math.max(...group.map(b => b.h)), l: Math.min(...group.map(b => b.l)),
+    c: group.at(-1)!.c, closed: false };
+  const previous = aggregateBars(bars, "1h", "4h", start).at(-1);
+  let shape: string | null = null;
+  if (previous?.closeTime === start) {
+    if (previous.c < previous.o && bar.c > bar.o && bar.o <= previous.c && bar.c >= previous.o) shape = "Bullish engulfing";
+    if (previous.c > previous.o && bar.c < bar.o && bar.o >= previous.c && bar.c <= previous.o) shape = "Bearish engulfing";
+  }
+  return { bar, through: cutoff, parts: group.length, shape };
+}
+
 export function ema(values: number[], period: number): (number | null)[] {
   const result: (number | null)[] = values.map(() => null);
   if (values.length < period) return result;

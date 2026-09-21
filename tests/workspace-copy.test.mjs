@@ -15,8 +15,8 @@ test('introduction explains how to start and distinguishes snapshots from record
   assert.match(workspace, /SOURCE_INTERVALS\(next\)\[0\]/);
   assert.match(workspace, /interval === active.base/);
   assert.match(workspace, /chooseAnalysis/);
-  assert.match(workspace, /ema: next === "context"/);
-  assert.match(workspace, /bollinger: next === "context"/);
+  assert.match(workspace, /reading modes preserve user choices/);
+  assert.match(workspace, /focusedPatternTime/);
   assert.match(workspace, /Murphy reading/);
   assert.doesNotMatch(workspace, /kind === "recording" \? "1h"/);
 });
@@ -43,4 +43,20 @@ test('introduction has no viewport-height gate and controls expose keyboard focu
   assert.ok(intro);
   assert.doesNotMatch(intro, /min-height/);
   assert.match(css, /\.market-workspace button:focus-visible/);
+});
+
+test('walkthrough explains real database boundaries and links implementation evidence', () => {
+  const guide = readFileSync(new URL('../app/about/page.tsx', import.meta.url), 'utf8');
+  const schema = readFileSync(new URL('../ingest/schema.sql', import.meta.url), 'utf8');
+  assert.match(workspace, /href="\/about"/);
+  for (const table of ['candles', 'ingest_runs']) {
+    assert.ok(guide.includes(`<code>${table}</code>`));
+    assert.ok(schema.includes(`CREATE TABLE IF NOT EXISTS ${table}`));
+  }
+  assert.match(guide, /public demo does not serve this database/);
+  assert.match(guide, /no foreign key/);
+  assert.match(guide, /not an immutable revision ledger/);
+  assert.match(guide, /commit separately/);
+  assert.match(guide, /double precision/);
+  assert.match(guide, /aria-label="Component dependencies"/);
 });

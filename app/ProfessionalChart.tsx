@@ -149,6 +149,7 @@ export type ChartReading = {
   steps: { n: string; label: string; value: string }[];
   because: string;
   anchor?: { time: number; label: string };
+  provisional?: boolean;
 };
 
 type ChartRefs = {
@@ -299,6 +300,7 @@ export function ProfessionalChart({
   oscillatorData,
   reading,
   highlightTime,
+  provisionalCandle,
 }: {
   data: ProfessionalChartData;
   timeframe: string;
@@ -310,6 +312,7 @@ export function ProfessionalChart({
   oscillatorData?: { line: ProfessionalChartPoint[]; signal?: ProfessionalChartPoint[]; histogram?: ProfessionalChartPoint[] };
   reading?: ChartReading | null;
   highlightTime?: number | null;
+  provisionalCandle?: ProfessionalChartCandle;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -691,6 +694,10 @@ export function ProfessionalChart({
             : "rgba(251, 89, 104, 0.34)",
       }))
       .sort((left, right) => Number(left.time) - Number(right.time));
+    // SOURCE: preview affects rendering only; data.candles and all calculated series stay closed-only.
+    if (provisionalCandle) candleRows.push({ time: toChartTime(provisionalCandle.t),
+      open: provisionalCandle.o, high: provisionalCandle.h, low: provisionalCandle.l, close: provisionalCandle.c,
+      color: "#e8b35b", borderColor: "#e8b35b", wickColor: "#e8b35b" });
     refs.candles.setData(candleRows);
     refs.volume?.setData(lowerPanel === "volume" ? volumeRows : (oscillatorData?.histogram ?? []).map(point=>({time:toChartTime(point.time),value:point.value,color:point.value>=0?"#378e7d":"#a8556b"})));
     refs.oscillator?.setData(lowerPanel === "rsi" || lowerPanel === "macd" ? compactLineData(oscillatorData?.line ?? []) : []);
@@ -716,7 +723,7 @@ export function ProfessionalChart({
     );
     const contextMarkers: SeriesMarker<Time>[] = reading?.anchor
       ? [{ id: "murphy-context", time: toChartTime(reading.anchor.time),
-          position: "aboveBar", shape: "circle", color: "#b2a4ff", text: "Setup" }]
+          position: "aboveBar", shape: "circle", color: reading.provisional ? "#e8b35b" : "#b2a4ff", text: reading.provisional ? "Forming" : "Setup" }]
       : [];
     const activePlan = data.overlays.plans.at(-1);
     const caseStudyPlan = data.overlays.caseStudy;
@@ -849,7 +856,7 @@ export function ProfessionalChart({
       resetView();
     }
     window.requestAnimationFrame(drawOverlay);
-  }, [data, groups, layers, resetView, drawOverlay, timeframe, lowerPanel, oscillatorData, reading, selectedGroup]);
+  }, [data, groups, layers, resetView, drawOverlay, timeframe, lowerPanel, oscillatorData, reading, selectedGroup, provisionalCandle]);
 
   useEffect(() => {
     const refs = chartRef.current;
@@ -857,8 +864,9 @@ export function ProfessionalChart({
     const index = data.candles.findIndex(candle => Number(candle.t) === highlightTime);
     if (index < 0) return;
     const range = refs.chart.timeScale().getVisibleLogicalRange();
-    // SOURCE: preserve the user's current zoom and center the selected candle symmetrically.
-    const span = range ? range.to - range.from : INITIAL_VISIBLE_BARS;
+    // GUESS: UNCALIBRATED GUESS — bounded context makes the two bodies readable;
+    // this is viewport spacing, not a detector lookback or a performance claim.
+    const span = Math.max(8, Math.min(32, range ? range.to - range.from : INITIAL_VISIBLE_BARS));
     refs.chart.timeScale().setVisibleLogicalRange({ from: index - span / 2, to: index + span / 2 });
     refs.chart.setCrosshairPosition(data.candles[index].c, toChartTime(highlightTime), refs.candles);
     setCrosshairBar(data.candles[index]);
@@ -980,7 +988,12 @@ export function ProfessionalChart({
     }
   };
 
-  const displayedBar = crosshairBar ?? data.candles.at(-1) ?? null;
+  // SOURCE: resolve the hovered timestamp against current input after replay/preview changes;
+  // never retain an old OHLC snapshot when rewinding or updating a provisional body.
+  const displayedBar = (crosshairBar && (
+    provisionalCandle && toEpoch(provisionalCandle.t) === toEpoch(crosshairBar.t)
+      ? provisionalCandle : data.candles.find(bar => toEpoch(bar.t) === toEpoch(crosshairBar.t))
+  )) || provisionalCandle || data.candles.at(-1) || null;
   const activeDrawings = drawings.filter(
     (drawing) => drawing.timeframe === timeframe,
   ).length;
@@ -995,6 +1008,7 @@ export function ProfessionalChart({
       data-ready={chartReady}
       data-timeframe={timeframe}
       data-bars={data.candles.length}
+      data-provisional-time={provisionalCandle?.t ?? ""}
       data-lower-panel={lowerPanel}
       data-marker-count={layers.patterns ? groups.length : 0}
       data-selected-pattern-time={selectedGroup?.knownTime ?? ""}
@@ -1032,7 +1046,7 @@ export function ProfessionalChart({
           >
             Latest
           </button>
-          <span className="chart-control-divider" aria-hidden="true" />
+          {(tool !== "inspect" || activeDrawings > 0 || redoStack.length > 0) && <><span className="chart-control-divider" aria-hidden="true" />
           <button
             type="button"
             onClick={undo}
@@ -1049,13 +1063,14 @@ export function ProfessionalChart({
           >
             ↷
           </button>
+          </>}
         </div>
       </div>
 
       {reading && (
         <section className="chart-reading-strip" data-testid="chart-setup" aria-live="polite">
           <span>{reading.kicker}</span><strong>{reading.setup}</strong>
-          {reading.anchor && <time>{formatTime(reading.anchor.time)} UTC · violet marker on candle</time>}
+          {reading.anchor && <time>{formatTime(reading.anchor.time)} UTC · {reading.provisional ? "amber provisional candle" : "violet marker on candle"}</time>}
           <p>{reading.steps.map(step => `${step.label}: ${step.value}`).join(" · ")}</p>
           <details><summary>Why this reading?</summary><p>{reading.because}</p></details>
         </section>
@@ -1079,7 +1094,7 @@ export function ProfessionalChart({
 
         {displayedBar && (
           <div className="pro-crosshair-readout" aria-live="polite">
-            <span>{formatTime(displayedBar.t)}</span>
+            <span>{formatTime(displayedBar.t)}{!displayedBar.closed && " · forming"}</span>
             <span>O <b>{formatPrice(displayedBar.o)}</b></span>
             <span>H <b>{formatPrice(displayedBar.h)}</b></span>
             <span>L <b>{formatPrice(displayedBar.l)}</b></span>
@@ -1092,7 +1107,8 @@ export function ProfessionalChart({
       </div>
 
       {selectedGroup && layers.patterns && (
-          <aside className="pattern-detail-card" aria-live="polite">
+          <details className="pattern-detail-card">
+            <summary>Evidence for the selected candle</summary>
             <header>
               <span>Pattern on this candle</span>
               <button
@@ -1139,7 +1155,7 @@ export function ProfessionalChart({
               ))}
             </ul>
             <p>Pattern evidence only. It is not an order or profitability claim.</p>
-          </aside>
+          </details>
         )}
 
       <p className="sr-only">

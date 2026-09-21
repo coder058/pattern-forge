@@ -4,6 +4,9 @@
 
 **Live demo:** https://pattern-forge-five.vercel.app/
 
+**In-app walkthrough:** `/about` explains the user journey, data paths, component dependencies,
+the actual database tables and engineering trade-offs. [Reading rules and reference limits](docs/reading-rules.md).
+
 **Architecture:** the browser talks to Next.js route handlers that validate closed candles from Hyperliquid's public HTTP API. A separate WebSocket carries live mid-price and never writes into replay. Recorded replay uses only the selected prefix; incomplete higher-timeframe groups are omitted, not guessed. The public Vercel demo does not serve PostgreSQL — persistence is for local use and CI.
 
 The application uses Next.js. Unused Vite/Vinext/Cloudflare migration dependencies were removed during the September 2026 dependency audit; no application code or active deployment depends on them.
@@ -24,19 +27,22 @@ live account monitor or proof of profitability.
 - One main chart with separate indicator controls. EMA periods, Bollinger Bands,
   confirmed swing geometry and candle markers are optional price overlays.
 - A lower pane can show volume, Wilder RSI, MACD or be hidden entirely.
-- Choose a market and timeframe, then **Setup / pattern**. Murphy draws EMA and
-  Bollinger Bands and names the last-bar reading. EMA, Bollinger location and
+- Choose a market and timeframe, then **Setup / pattern**. Murphy names the last-bar
+  reading; its supporting indicators are optional and remain under user control. EMA, Bollinger location and
   confirmed swings are also available separately. These are descriptive setups,
   not calibrated trading strategies or a complete implementation of a textbook.
-- Candlestick patterns can be filtered by shape. Select a result to centre its
-  candle and read the evidence; only the selected marker is named to avoid clutter.
-- Drawing tools add your own annotations; analytical overlays draw automatically.
+- Candlestick patterns can be filtered by shape. The latest match is focused automatically;
+  select an older result to inspect it. The timestamp distinguishes a historical match from the current candle.
+- Drawing tools are tucked under Inspect tools; the default journey needs no annotations.
 - The price chart has a dedicated layout row even when analysis is closed.
   Selected evidence expands below it instead of hiding the plot.
 - Stored candles appear only when the running server has `DATABASE_URL` configured.
   A failed public price source offers an explicitly historical BTC recording.
 - Recorded markets have a replay cursor, previous/next bar and end controls.
   Indicators and higher-timeframe aggregates use only the selected prefix.
+- For hourly recordings at 4h, engulfing mode offers an optional amber forming preview.
+  It aggregates only already-closed hourly observations, not inferred intrahour ticks.
+  Provisional geometry can disappear; confirmed indicators and exports remain closed-only.
 - Export contains the current interval's candles through the replay cursor,
   source information and the input hash, not orders or account data.
 
