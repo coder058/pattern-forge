@@ -124,8 +124,11 @@ for (const viewport of viewports) {
       }
       assert.deepEqual(errors, []);
       await page.goto(`${baseURL}/about`);
+      await page.waitForURL('**/#how-it-works');
+      assert.match(await page.locator('.mw-intro').innerText(), /3 public crypto markets · 10 market recordings · 1 saved BTC case/);
+      await page.locator('.mw-build-guide > summary').click();
       assert.equal(await page.getByRole('heading', {level:1}).count(), 1);
-      assert.equal(await page.getByRole('table').count(), 4);
+      assert.equal(await page.locator('.pf-guide').getByRole('table').count(), 4);
       assert.equal(await page.locator('body').evaluate(el => el.scrollWidth > innerWidth), false, 'guide overflow');
       if (process.env.PF_SCREENSHOT_DIR) await page.screenshot({path:`${process.env.PF_SCREENSHOT_DIR}/guide-${viewport.width}.png`,fullPage:true});
     } finally { await browser.close(); }

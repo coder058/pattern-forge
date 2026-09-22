@@ -27,6 +27,7 @@ import {
 } from "./marketSources";
 import "./workspace.css";
 import { LiveQuote } from "./QuoteTicker";
+import { ProjectGuide } from "./ProjectGuide";
 
 type Analysis = "none" | "timeframes" | "context" | "patterns" | "case" | "ema" | "bands" | "swings";
 // SOURCE: detector names implemented in marketAnalysis.calculateChart.
@@ -83,6 +84,10 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   const workspaceRef = useRef<HTMLElement>(null);
   const source = SOURCES.find((s) => s.id === sourceId)!;
   const availableSources = SOURCES.filter((s) => storedEnabled || s.kind !== "stored");
+  // SOURCE: counts come from the same catalog as the market selector, not a marketing total.
+  const publicMarkets = availableSources.filter((s) => s.kind === "public");
+  const recordings = availableSources.filter((s) => s.kind === "recording");
+  const savedCases = availableSources.filter((s) => s.kind === "case");
   const intervals = useMemo(() => SOURCE_INTERVALS(source), [source]);
 
   useEffect(() => {
@@ -358,12 +363,21 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
       <section className="mw-intro" aria-labelledby="pattern-forge-title">
         <h1 id="pattern-forge-title">Pattern Forge</h1>
         <div>
-          <p>Explore public crypto prices and recorded markets on one chart. Replay recalculates indicators using only candles available at that point, without looking ahead.</p>
-          <p>Choose a market and a timeframe below, then choose Murphy or Candlestick patterns. Pattern markers are drawn automatically on the chart and the latest match comes into view. Indicators are optional. For a recording, move the Replay slider back and step forward to watch the reading change.</p>
+          <p><strong>A chart that only knows what happened so far.</strong> Inspect prices, spot candle shapes and rewind a recording. The chart recalculates using only the candles available at that moment — never later prices.</p>
+          <p><strong>{publicMarkets.length} public crypto markets · {recordings.length} market recordings · {savedCases.length} saved BTC case.</strong> Public markets load recent closed candles. Recordings are dated examples, not live prices; these are data options, not all different assets.</p>
         </div>
+        <ol className="mw-quickstart" aria-label="Start here">
+          <li><strong>Choose a market and a timeframe below.</strong> Start with Gold in Recorded commodities for a saved example, or BTC, ETH or SOL for a public snapshot.</li>
+          <li><strong>Choose what to inspect.</strong> Candlestick patterns → Bullish engulfing highlights a rising candle whose body covers the previous falling body. Markers are drawn automatically on the chart; no match is labelled clearly. Murphy → Trend &amp; location gives a short reading beside the chart. Indicators are optional.</li>
+          <li><strong>Rewind and step forward.</strong> On a recording, move the Replay slider back, then step through the candles to see the reading change. Export saves the closed candles you can see, with their source.</li>
+        </ol>
+        <details className="mw-recording-list"><summary>Available recordings and the forming-candle preview</summary>
+          <p>{recordings.map((s) => s.label).join(" · ")}. These are recorded perpetual contracts; the separate BTC case comes from Hyperliquid.</p>
+          <p>On an hourly recording, select 4h and an engulfing pattern, then enable Preview forming 4h. The amber body builds from closed hourly candles. Its pattern can disappear before the four-hour candle closes; this is not tick-by-tick playback.</p>
+        </details>
         <a className="mw-start" href="#workspace">Explore the chart ↓</a>
       </section>
-      <nav className="mw-project-nav" aria-label="Project guide"><a href="/about">How it works: data, database &amp; decisions →</a></nav>
+      <ProjectGuide />
       <header className="mw-header" id="workspace">
         <a className="mw-brand" href="#pattern-forge-title">
           Pattern Forge<span>Market workspace</span>

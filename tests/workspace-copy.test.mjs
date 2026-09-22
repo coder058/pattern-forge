@@ -46,9 +46,13 @@ test('introduction has no viewport-height gate and controls expose keyboard focu
 });
 
 test('walkthrough explains real database boundaries and links implementation evidence', () => {
-  const guide = readFileSync(new URL('../app/about/page.tsx', import.meta.url), 'utf8');
+  const guide = readFileSync(new URL('../app/ProjectGuide.tsx', import.meta.url), 'utf8');
   const schema = readFileSync(new URL('../ingest/schema.sql', import.meta.url), 'utf8');
-  assert.match(workspace, /href="\/about"/);
+  assert.match(workspace, /<ProjectGuide \/>/);
+  assert.ok(workspace.indexOf('<ProjectGuide />') < workspace.indexOf('id="workspace"'));
+  assert.match(workspace, /publicMarkets.length/);
+  assert.match(workspace, /recordings.length/);
+  assert.match(workspace, /savedCases.length/);
   for (const table of ['candles', 'ingest_runs']) {
     assert.ok(guide.includes(`<code>${table}</code>`));
     assert.ok(schema.includes(`CREATE TABLE IF NOT EXISTS ${table}`));

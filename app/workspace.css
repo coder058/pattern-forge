@@ -24,6 +24,14 @@
   align-content: center;
   gap: 20px;
 }
+/* SOURCE: editorial layout dimensions, not market parameters. */
+.mw-quickstart { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; padding-left: 20px; margin: 0; max-width: 1200px; line-height: 1.6; font-size: 15px; }
+.mw-quickstart strong { display: block; }
+.mw-recording-list { max-width: 1040px; line-height: 1.6; }
+.mw-intro summary:hover { background: transparent; text-decoration: underline; }
+.mw-build-guide > summary { padding: 18px 4vw; border-bottom: 1px solid var(--line); }
+.mw-build-guide .pf-guide { padding-top: 0; }
+@media (max-width: 760px) { .mw-quickstart { grid-template-columns: 1fr; gap: 12px; } }
 .mw-intro h1 {
   margin: 0;
   font-size: clamp(40px, 5vw, 72px);
