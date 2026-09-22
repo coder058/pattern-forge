@@ -367,7 +367,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
           <p><strong>{publicMarkets.length} public crypto markets · {recordings.length} market recordings · {savedCases.length} saved BTC case.</strong> Public markets load recent closed candles. Recordings are dated examples, not live prices; these are data options, not all different assets.</p>
         </div>
         <ol className="mw-quickstart" aria-label="Start here">
-          <li><strong>Choose a market and a timeframe below.</strong> Start with Gold in Recorded commodities for a saved example, or BTC, ETH or SOL for a public snapshot.</li>
+          <li><strong>Choose a market and a timeframe below.</strong> Start with the Gold recording for a saved example, or BTC, ETH or SOL for a public snapshot.</li>
           <li><strong>Choose what to inspect.</strong> Candlestick patterns → Bullish engulfing highlights a rising candle whose body covers the previous falling body. Markers are drawn automatically on the chart; no match is labelled clearly. Murphy → Trend &amp; location gives a short reading beside the chart. Indicators are optional.</li>
           <li><strong>Rewind and step forward.</strong> On a recording, move the Replay slider back, then step through the candles to see the reading change. Export saves the closed candles you can see, with their source.</li>
         </ol>
