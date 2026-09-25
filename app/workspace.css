@@ -17,12 +17,12 @@
 /* GUESS: UNCALIBRATED GUESS — compact introduction keeps the chart within reach;
    these are editorial dimensions, not measured market or performance values. */
 .mw-intro {
-  padding: 28px 4vw;
+  padding: 16px 4vw;
   background: #e7dfd0;
   color: #17191c;
   display: grid;
   align-content: center;
-  gap: 20px;
+  gap: 10px;
 }
 /* SOURCE: editorial layout dimensions, not market parameters. */
 .mw-quickstart { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; padding-left: 20px; margin: 0; max-width: 1200px; line-height: 1.6; font-size: 15px; }
@@ -34,13 +34,13 @@
 @media (max-width: 760px) { .mw-quickstart { grid-template-columns: 1fr; gap: 12px; } }
 .mw-intro h1 {
   margin: 0;
-  font-size: clamp(40px, 5vw, 72px);
+  font-size: clamp(28px, 3vw, 40px);
   line-height: 1;
   letter-spacing: -.05em;
 }
 .mw-intro > div {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 32px;
   max-width: 1040px;
 }
@@ -642,7 +642,7 @@
 }
 @media (max-width: 900px) {
   .mw-intro {
-    padding: 24px;
+    padding: 16px;
   }
   .mw-intro > div {
     grid-template-columns: 1fr;
@@ -702,7 +702,7 @@
 }
 @media (max-width: 540px) {
   .mw-intro h1 {
-    font-size: 40px;
+    font-size: 28px;
   }
   .mw-toolbar > button:first-child {
     display: none;

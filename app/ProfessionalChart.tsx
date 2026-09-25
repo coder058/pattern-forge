@@ -148,6 +148,7 @@ export type ChartReading = {
   setup: string;
   steps: { n: string; label: string; value: string }[];
   because: string;
+  sentence?: string;
   anchor?: { time: number; label: string };
   provisional?: boolean;
 };
@@ -1069,10 +1070,7 @@ export function ProfessionalChart({
 
       {reading && (
         <section className="chart-reading-strip" data-testid="chart-setup" aria-live="polite">
-          <span>{reading.kicker}</span><strong>{reading.setup}</strong>
-          {reading.anchor && <time>{formatTime(reading.anchor.time)} UTC · {reading.provisional ? "amber provisional candle" : "violet marker on candle"}</time>}
-          <p>{reading.steps.map(step => `${step.label}: ${step.value}`).join(" · ")}</p>
-          <details><summary>Why this reading?</summary><p>{reading.because}</p></details>
+          <p>{reading.sentence ?? `${reading.setup}: ${reading.because}`}</p>
         </section>
       )}
 

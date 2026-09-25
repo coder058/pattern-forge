@@ -41,6 +41,11 @@ for (const viewport of viewports) {
         assert.equal(await page.locator('body').evaluate(el => el.scrollWidth > innerWidth), false, 'horizontal page overflow');
       };
       await assertPlot(); // Regression: the initial, hidden-analysis chart was zero pixels tall.
+      // SOURCE: requested chart-first landing; use the actual viewport boundary.
+      const initialPlot = await page.locator('.professional-chart-stage').boundingBox();
+      assert.ok(initialPlot.y < viewport.height, 'initial chart is below the fold');
+      assert.equal(await page.locator('.mw-build-guide').getAttribute('open'), null);
+      assert.equal(await chart.getAttribute('data-layers'), '');
       assert.equal(await page.locator('option[value="stored-BTC"]').count(), 0);
       for (const [value, layers] of [['context',[]],['ema',['ema']],['bands',['ema','bollinger']],['swings',['ema','bollinger','trendlines']],['patterns',['ema','bollinger','trendlines','patterns']],['timeframes',['ema','bollinger','trendlines']],['none',['ema','bollinger','trendlines']]]) {
         await page.getByRole('combobox',{name:'Analysis panel'}).selectOption(value);
@@ -84,7 +89,14 @@ for (const viewport of viewports) {
         const plot = document.querySelector('.professional-chart-stage').getBoundingClientRect();
         return plot.top < innerHeight && plot.bottom > 0;
       });
+      const readingBeforeClose = await page.getByTestId('chart-setup').innerText();
+      const markersBeforeClose = await chart.getAttribute('data-marker-count');
       await page.getByRole('button',{name:'Close analysis',exact:true}).click();
+      assert.equal(await page.getByTestId('chart-setup').innerText(), readingBeforeClose);
+      assert.equal(await chart.getAttribute('data-marker-count'), markersBeforeClose);
+      assert.equal(await page.getByRole('complementary',{name:'Analysis',exact:true}).count(), 0);
+      await page.getByRole('button',{name:'Open analysis',exact:true}).click();
+      assert.equal(await page.getByRole('complementary',{name:'Analysis',exact:true}).count(), 1);
       await assertPlot();
       await page.getByRole('combobox',{name:'Market',exact:true}).selectOption('recorded-XAUUSD');
       await page.getByRole('slider',{name:'Replay position'}).waitFor();
@@ -125,7 +137,7 @@ for (const viewport of viewports) {
       assert.deepEqual(errors, []);
       await page.goto(`${baseURL}/about`);
       await page.waitForURL('**/#how-it-works');
-      assert.match(await page.locator('.mw-intro').innerText(), /3 public crypto markets · 10 market recordings · 1 saved BTC case/);
+      assert.match(await page.locator('.mw-intro').textContent(), /3 public crypto markets · 10 market recordings · 1 saved BTC case/);
       await page.locator('.mw-build-guide > summary').click();
       assert.equal(await page.getByRole('heading', {level:1}).count(), 1);
       assert.equal(await page.locator('.pf-guide').getByRole('table').count(), 4);

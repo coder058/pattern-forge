@@ -69,6 +69,8 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   const [query, setQuery] = useState("");
   const [watchlist, setWatchlist] = useState(false);
   const [analysis, setAnalysis] = useState<Analysis>("none");
+  // SOURCE: closing the inspector must preserve the selected reading and markers.
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
   const [tool, setTool] = useState<ProfessionalDrawTool>("inspect");
   const [clearToken, setClearToken] = useState(0);
@@ -247,6 +249,8 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
       return {
         kicker: "Murphy reading · last closed bar",
         setup: murphy.setup,
+        // SOURCE: use the existing reading rule's first explanation sentence.
+        sentence: `${murphy.setup}: ${murphy.because.split(/(?<=\.)\s/).at(0)}`,
         steps: [
           { n: "01", label: "Direction", value: murphy.trend },
           { n: "02", label: "Location", value: murphy.location },
@@ -267,6 +271,9 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
         setup: displayedPatterns.length
           ? displayedPatterns.map((p) => p.name).join(" · ")
           : "No matching shape in this slice",
+        sentence: displayedPatterns[0]
+          ? `${displayedPatterns[0].name}: ${displayedPatterns[0].variant}`
+          : "No matching shape in this slice; change the pattern or replay position.",
         steps: [
           {
             n: "01",
@@ -323,6 +330,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   const chooseAnalysis = (next: Analysis) => {
     workspaceRef.current?.querySelectorAll("details[open]").forEach(el => el.removeAttribute("open"));
     setAnalysis(next);
+    setAnalysisOpen(next !== "none");
     setHighlightTime(null);
     setTool("inspect");
     // SOURCE: explicit indicator presets add their layer; reading modes preserve user choices.
@@ -363,19 +371,20 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
       <section className="mw-intro" aria-labelledby="pattern-forge-title">
         <h1 id="pattern-forge-title">Pattern Forge</h1>
         <div>
-          <p><strong>A chart that only knows what happened so far.</strong> Inspect prices, spot candle shapes and rewind a recording. The chart recalculates using only the candles available at that moment — never later prices.</p>
-          <p><strong>{publicMarkets.length} public crypto markets · {recordings.length} market recordings · {savedCases.length} saved BTC case.</strong> Public markets load recent closed candles. Recordings are dated examples, not live prices; these are data options, not all different assets.</p>
+          <p><strong>A chart that only knows what happened so far.</strong> Choose a market, inspect a candle pattern and rewind a recording without seeing later prices.</p>
         </div>
+        <details className="mw-start-guide"><summary>How to use the chart</summary>
         <ol className="mw-quickstart" aria-label="Start here">
           <li><strong>Choose a market and a timeframe below.</strong> Start with the Gold recording for a saved example, or BTC, ETH or SOL for a public snapshot.</li>
           <li><strong>Choose what to inspect.</strong> Candlestick patterns → Bullish engulfing highlights a rising candle whose body covers the previous falling body. Markers are drawn automatically on the chart; no match is labelled clearly. Murphy → Trend &amp; location gives a short reading beside the chart. Indicators are optional.</li>
           <li><strong>Rewind and step forward.</strong> On a recording, move the Replay slider back, then step through the candles to see the reading change. Export saves the closed candles you can see, with their source.</li>
         </ol>
+        </details>
         <details className="mw-recording-list"><summary>Available recordings and the forming-candle preview</summary>
+          <p><strong>{publicMarkets.length} public crypto markets · {recordings.length} market recordings · {savedCases.length} saved BTC case.</strong> Public markets load recent closed candles. Recordings are dated examples, not live prices; these are data options, not all different assets.</p>
           <p>{recordings.map((s) => s.label).join(" · ")}. These are recorded perpetual contracts; the separate BTC case comes from Hyperliquid.</p>
           <p>On an hourly recording, select 4h and an engulfing pattern, then enable Preview forming 4h. The amber body builds from closed hourly candles. Its pattern can disappear before the four-hour candle closes; this is not tick-by-tick playback.</p>
         </details>
-        <a className="mw-start" href="#workspace">Explore the chart ↓</a>
       </section>
       <ProjectGuide />
       <header className="mw-header" id="workspace">
@@ -521,6 +530,9 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             )}
           </select>
         </label>
+        {analysis !== "none" && !analysisOpen && (
+          <button onClick={() => setAnalysisOpen(true)} aria-label="Open analysis">Details</button>
+        )}
         {analysis === "patterns" && (
           <label className="mw-analysis-select">Pattern
             <select aria-label="Candlestick pattern" value={patternName} onChange={e => {
@@ -578,7 +590,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
         </details>
       </div>
       <div
-        className={`mw-body ${watchlist ? "with-markets" : ""} ${analysis !== "none" ? "with-analysis" : ""}`}
+        className={`mw-body ${watchlist ? "with-markets" : ""} ${analysisOpen && analysis !== "none" ? "with-analysis" : ""}`}
       >
         {watchlist && (
           <aside className="mw-markets" aria-label="Markets">
@@ -802,7 +814,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             </button>
           </footer>
         </section>
-        {analysis !== "none" && (
+        {analysisOpen && analysis !== "none" && (
           <aside className="mw-analysis" aria-label="Analysis">
             <div className="mw-sidebar-title">
               <h2>
@@ -816,7 +828,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
               </h2>
               <button
                 aria-label="Close analysis"
-                onClick={() => chooseAnalysis("none")}
+                onClick={() => setAnalysisOpen(false)}
               >
                 ×
               </button>
