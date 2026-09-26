@@ -19,3 +19,16 @@
 .pf-guide tr:last-child > * { border-bottom: 0; }
 .pf-guide code { overflow-wrap: anywhere; }
 .pf-guide footer { padding-top: 24px; border-top: 1px solid #334155; }
+/* SOURCE: the public workspace has a light background; preserve readable contrast. */
+.mw-intro .pf-guide { width: 100%; max-width: none; padding: 8px 0; color: #292824; }
+.mw-intro .pf-guide tbody { background: #f6f1e0; color: #292824; }
+.mw-intro .pf-guide table { font-size: 16px; }
+@media (max-width: 700px) {
+  .mw-intro .pf-guide table { min-width: 0; }
+  .mw-intro .pf-guide thead { display: none; }
+  .mw-intro .pf-guide tr, .mw-intro .pf-guide td, .mw-intro .pf-guide tbody th { display: block; min-width: 0; width: 100%; }
+  .mw-intro .pf-guide tbody th { background: #ded5bf; }
+  .mw-intro .pf-guide td::before { display: block; font-weight: 700; margin-bottom: 4px; }
+  .mw-intro .pf-guide td:nth-child(2)::before { content: "What I built"; }
+  .mw-intro .pf-guide td:nth-child(3)::before { content: "What you can check"; }
+}

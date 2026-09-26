@@ -371,9 +371,15 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
       <section className="mw-intro" aria-labelledby="pattern-forge-title">
         <h1 id="pattern-forge-title">Pattern Forge</h1>
         <div>
-          <p><strong>A chart that only knows what happened so far.</strong> Choose a market, inspect a candle pattern and rewind a recording without seeing later prices.</p>
+          <p><strong>Would this pattern have been visible before the next price arrived?</strong> A finished chart makes the past look obvious. I built Pattern Forge to rewind it and show only what was available at the selected time.</p>
+          <p>Choose a market, inspect a candle pattern and step forward. The improvement is in the comparison: later prices cannot silently change an earlier reading. Pattern shapes describe the chart; they do not predict a profitable trade.</p>
         </div>
-        <details className="mw-start-guide"><summary>How to use the chart</summary>
+        <div className="pf-guide"><div className="pf-table" role="region" aria-label="Problem and solution" tabIndex={0}><table><thead><tr><th>Problem</th><th>What I built</th><th>What you can check</th></tr></thead><tbody>
+          <tr><th>Hindsight makes patterns look easier to spot.</th><td>A replay that stops all calculations at your selected time.</td><td>Rewind and advance one candle. The reading changes only as information becomes available.</td></tr>
+          <tr><th>Missing prices can produce misleading shapes.</th><td>Checks for incomplete candles and gaps.</td><td>Missing periods stay missing; incomplete groups are not filled with invented prices.</td></tr>
+          <tr><th>A current quote can be confused with a recording.</th><td>Separate live quotes, saved charts and stored records.</td><td>Each view identifies its source. The PostgreSQL database runs locally and in automated checks, not on this public demo.</td></tr>
+        </tbody></table></div></div>
+        <details className="mw-start-guide" open><summary>How to use the chart</summary>
         <ol className="mw-quickstart" aria-label="Start here">
           <li><strong>Choose a market and a timeframe below.</strong> Start with the Gold recording for a saved example, or BTC, ETH or SOL for a public snapshot.</li>
           <li><strong>Choose what to inspect.</strong> Candlestick patterns → Bullish engulfing highlights a rising candle whose body covers the previous falling body. Markers are drawn automatically on the chart; no match is labelled clearly. Murphy → Trend &amp; location gives a short reading beside the chart. Indicators are optional.</li>
