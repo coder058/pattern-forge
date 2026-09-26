@@ -370,6 +370,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
     <main className="market-workspace" ref={workspaceRef}>
       <section className="mw-intro" aria-labelledby="pattern-forge-title">
         <h1 id="pattern-forge-title">Pattern Forge</h1>
+        <a href="#price-chart">Go to the chart</a>
         <div>
           <p><strong>Would this pattern have been visible before the next price arrived?</strong> A finished chart makes the past look obvious. I built Pattern Forge to rewind it and show only what was available at the selected time.</p>
           <p>Choose a market, inspect a candle pattern and step forward. The improvement is in the comparison: later prices cannot silently change an earlier reading. Pattern shapes describe the chart; they do not predict a profitable trade.</p>
@@ -647,7 +648,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             {!filtered.length && <p>No matching market.</p>}
           </aside>
         )}
-        <section className="mw-chart-panel" aria-label="Market chart">
+        <section className="mw-chart-panel" id="price-chart" aria-label="Market chart">
           <div className="mw-chart-heading">
             <div>
               <h2>

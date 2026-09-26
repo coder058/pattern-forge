@@ -41,9 +41,16 @@ for (const viewport of viewports) {
         assert.equal(await page.locator('body').evaluate(el => el.scrollWidth > innerWidth), false, 'horizontal page overflow');
       };
       await assertPlot(); // Regression: the initial, hidden-analysis chart was zero pixels tall.
-      // SOURCE: requested chart-first landing; use the actual viewport boundary.
+      // SOURCE: 26 September request: explanation first, chart on the same page.
+      const introduction = await page.locator('.mw-intro').boundingBox();
       const initialPlot = await page.locator('.professional-chart-stage').boundingBox();
-      assert.ok(initialPlot.y < viewport.height, 'initial chart is below the fold');
+      assert.ok(introduction && initialPlot.y > introduction.y, 'explanation must precede the chart');
+      assert.equal(await page.locator('.mw-intro table').count(), 1, 'the plain-language problem/solution table must be on the chart page');
+      await page.getByRole('link', {name:'Go to the chart', exact:true}).click();
+      await page.waitForFunction(() => {
+        const box = document.querySelector('.professional-chart-stage').getBoundingClientRect();
+        return box.top < innerHeight && box.bottom > 0;
+      });
       assert.equal(await page.locator('.mw-build-guide').getAttribute('open'), null);
       assert.equal(await chart.getAttribute('data-layers'), '');
       assert.equal(await page.locator('option[value="stored-BTC"]').count(), 0);
@@ -140,7 +147,7 @@ for (const viewport of viewports) {
       assert.match(await page.locator('.mw-intro').textContent(), /3 public crypto markets · 10 market recordings · 1 saved BTC case/);
       await page.locator('.mw-build-guide > summary').click();
       assert.equal(await page.getByRole('heading', {level:1}).count(), 1);
-      assert.equal(await page.locator('.pf-guide').getByRole('table').count(), 4);
+      assert.equal(await page.locator('.mw-build-guide table').count(), 4);
       assert.equal(await page.locator('body').evaluate(el => el.scrollWidth > innerWidth), false, 'guide overflow');
       if (process.env.PF_SCREENSHOT_DIR) await page.screenshot({path:`${process.env.PF_SCREENSHOT_DIR}/guide-${viewport.width}.png`,fullPage:true});
     } finally { await browser.close(); }
