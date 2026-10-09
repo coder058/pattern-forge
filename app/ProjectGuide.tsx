@@ -2,8 +2,8 @@ import "./about/about.css";
 
 const repo = "https://github.com/coder058/pattern-forge/blob/main/";
 
-export function ProjectGuide() {
-  return <details className="mw-build-guide" id="how-it-works">
+export function ProjectGuide({ open = false }: { open?: boolean }) {
+  return <details className="mw-build-guide" id="how-it-works" open={open}>
     <summary>How I built it — data flow, database and checks</summary>
     <div className="pf-guide">
       <section><h2>From a price record to a chart</h2>

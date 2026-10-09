@@ -176,6 +176,10 @@ const RIGHT_OFFSET_BARS = 6;
 // # GUESS: UNCALIBRATED GUESS — showing two recent causal structure lines is a visual decluttering
 // policy. The complete supplied structure remains available in the inspector.
 const DEFAULT_VISIBLE_TRENDLINES = 2;
+// SOURCE: conventional dark-terminal candle colours; presentation only.
+const UP_COLOR = "#26a69a";
+const DOWN_COLOR = "#ef5350";
+const FOCUS_COLOR = "#ffd54f";
 // SOURCE: These zoom ratios are user-interface increments only.
 const ZOOM_IN_RATIO = 0.72;
 const ZOOM_OUT_RATIO = 1.38;
@@ -284,9 +288,9 @@ function markerForGroup(
     time: group.knownTime,
     position: bullish ? "belowBar" : "aboveBar",
     shape: bullish ? "arrowUp" : bearish ? "arrowDown" : "circle",
-    color: bullish ? "#32d3b8" : bearish ? "#ff6573" : "#f4b548",
+    color: bullish ? UP_COLOR : bearish ? DOWN_COLOR : "#f0b44c",
     text: named ? label : undefined,
-    size: named ? 1.2 : 1,
+    size: named ? 1.6 : 1,
   };
 }
 
@@ -483,40 +487,41 @@ export function ProfessionalChart({
     const chart = createChart(container, {
       autoSize: true,
       layout: {
-        background: { type: ColorType.Solid, color: "#0b0f16" },
-        textColor: "#95a3b8",
-        fontFamily: "Consolas, monospace",
+        background: { type: ColorType.Solid, color: "#131722" },
+        textColor: "#8a8e99",
+        fontFamily: "-apple-system, \"Segoe UI\", Roboto, Ubuntu, sans-serif",
+        fontSize: 12,
         attributionLogo: true,
         panes: {
-          separatorColor: "#1a2a31",
-          separatorHoverColor: "#2b4852",
+          separatorColor: "#2a2e39",
+          separatorHoverColor: "#434651",
           enableResize: true,
         },
       },
       grid: {
-        vertLines: { color: "rgba(137, 170, 181, 0.08)" },
-        horzLines: { color: "rgba(137, 170, 181, 0.08)" },
+        vertLines: { color: "rgba(42, 46, 57, 0.6)" },
+        horzLines: { color: "rgba(42, 46, 57, 0.6)" },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
         vertLine: {
-          color: "rgba(193, 213, 218, 0.42)",
-          labelBackgroundColor: "#20353d",
+          color: "rgba(150, 156, 170, 0.55)",
+          labelBackgroundColor: "#363a45",
           style: LineStyle.Dashed,
         },
         horzLine: {
-          color: "rgba(193, 213, 218, 0.32)",
-          labelBackgroundColor: "#20353d",
+          color: "rgba(150, 156, 170, 0.45)",
+          labelBackgroundColor: "#363a45",
           style: LineStyle.Dashed,
         },
       },
       rightPriceScale: {
-        borderColor: "#1a2a31",
+        borderColor: "#2a2e39",
         scaleMargins: { top: 0.08, bottom: 0.1 },
         minimumWidth: 68,
       },
       timeScale: {
-        borderColor: "#1a2a31",
+        borderColor: "#2a2e39",
         rightOffset: RIGHT_OFFSET_BARS,
         timeVisible: true,
         secondsVisible: false,
@@ -537,13 +542,16 @@ export function ProfessionalChart({
       },
     });
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#24c4ae",
-      downColor: "#fb5968",
-      borderVisible: false,
-      wickUpColor: "#24c4ae",
-      wickDownColor: "#fb5968",
+      upColor: UP_COLOR,
+      downColor: DOWN_COLOR,
+      // SOURCE: borders stay in candle colour; only the focused pattern's bodies get an outline.
+      borderVisible: true,
+      borderUpColor: UP_COLOR,
+      borderDownColor: DOWN_COLOR,
+      wickUpColor: UP_COLOR,
+      wickDownColor: DOWN_COLOR,
       priceLineVisible: true,
-      priceLineColor: "rgba(251, 89, 104, 0.55)",
+      priceLineColor: "rgba(138, 142, 153, 0.6)",
       lastValueVisible: true,
     });
     const emaSeries = chart.addSeries(LineSeries, {
@@ -588,7 +596,7 @@ export function ProfessionalChart({
       1,
     );
     const oscillator = lowerPanel === "none" ? null : chart.addSeries(LineSeries, {
-      color: "#afa0ff", lineWidth: 2, priceLineVisible: false, lastValueVisible: true,
+      color: "#7e57c2", lineWidth: 2, priceLineVisible: false, lastValueVisible: true,
       // SOURCE: RSI is mathematically bounded to 0–100; keep that scale fixed.
       ...(lowerPanel === "rsi" ? {autoscaleInfoProvider: () => ({priceRange: {minValue: 0, maxValue: 100}})} : {}),
     }, 1);
@@ -676,14 +684,23 @@ export function ProfessionalChart({
   useEffect(() => {
     const refs = chartRef.current;
     if (!refs) return;
+    // Outline the candles that form the focused pattern so the eye finds them at once.
+    const focusTimes = new Set<number>();
+    if (selectedGroup && layers.patterns) {
+      const index = data.candles.findIndex((candle) => toChartTime(candle.t) === selectedGroup.knownTime);
+      if (index >= 0) {
+        focusTimes.add(selectedGroup.knownTime);
+        // SOURCE: an engulfing shape is defined by two bodies; both belong to the evidence.
+        if (index > 0 && selectedGroup.patterns.some((p) => /engulf/i.test(p.name)))
+          focusTimes.add(toChartTime(data.candles[index - 1].t));
+      }
+    }
     const candleRows: CandlestickData<Time>[] = data.candles
-      .map((candle) => ({
-        time: toChartTime(candle.t),
-        open: candle.o,
-        high: candle.h,
-        low: candle.l,
-        close: candle.c,
-      }))
+      .map((candle) => {
+        const time = toChartTime(candle.t);
+        const row: CandlestickData<Time> = { time, open: candle.o, high: candle.h, low: candle.l, close: candle.c };
+        return focusTimes.has(time) ? { ...row, borderColor: FOCUS_COLOR, wickColor: FOCUS_COLOR } : row;
+      })
       .sort((left, right) => Number(left.time) - Number(right.time));
     const volumeRows: (HistogramData<Time> | WhitespaceData<Time>)[] = data.candles
       .map((candle) => candle.v === undefined ? { time: toChartTime(candle.t) } : ({
@@ -691,8 +708,8 @@ export function ProfessionalChart({
         value: candle.v,
         color:
           candle.c >= candle.o
-            ? "rgba(36, 196, 174, 0.34)"
-            : "rgba(251, 89, 104, 0.34)",
+            ? "rgba(38, 166, 154, 0.38)"
+            : "rgba(239, 83, 80, 0.38)",
       }))
       .sort((left, right) => Number(left.time) - Number(right.time));
     // SOURCE: preview affects rendering only; data.candles and all calculated series stay closed-only.
@@ -1106,7 +1123,7 @@ export function ProfessionalChart({
 
       {selectedGroup && layers.patterns && (
           <details className="pattern-detail-card">
-            <summary>Evidence for the selected candle</summary>
+            <summary>Details of the selected pattern</summary>
             <header>
               <span>Pattern on this candle</span>
               <button

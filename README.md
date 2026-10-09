@@ -19,32 +19,34 @@ live account monitor or proof of profitability.
 
 ## Interface
 
-- Market search and selector: BTC/ETH/SOL public snapshots; ten recorded markets;
-  the original saved BTC case. Only the selected market's candles are requested.
-- A separate live mid-price uses Hyperliquid's public WebSocket. Switching to a
-  recording closes the connection. A missing or disconnected stream loses its
-  live status and clears the price while reconnecting. It never modifies replay.
-- One main chart with separate indicator controls. EMA periods, Bollinger Bands,
-  confirmed swing geometry and candle markers are optional price overlays.
-- A lower pane can show volume, Wilder RSI, MACD or be hidden entirely.
-- Choose a market and timeframe, then **Setup / pattern**. Murphy names the last-bar
-  reading; its supporting indicators are optional and remain under user control. EMA, Bollinger location and
-  confirmed swings are also available separately. These are descriptive setups,
-  not calibrated trading strategies or a complete implementation of a textbook.
-- Candlestick patterns can be filtered by shape. The latest match is focused automatically;
-  select an older result to inspect it. The timestamp distinguishes a historical match from the current candle.
-- Drawing tools are tucked under Inspect tools; the default journey needs no annotations.
-- The price chart has a dedicated layout row even when analysis is closed.
-  Selected evidence expands below it instead of hiding the plot.
-- Stored candles appear only when the running server has `DATABASE_URL` configured.
-  A failed public price source offers an explicitly historical BTC recording.
-- Recorded markets have a replay cursor, previous/next bar and end controls.
-  Indicators and higher-timeframe aggregates use only the selected prefix.
-- For hourly recordings at 4h, engulfing mode offers an optional amber forming preview.
-  It aggregates only already-closed hourly observations, not inferred intrahour ticks.
-  Provisional geometry can disappear; confirmed indicators and exports remain closed-only.
-- Export contains the current interval's candles through the replay cursor,
-  source information and the input hash, not orders or account data.
+The app opens straight on the chart, laid out like a trading terminal:
+
+- **Top bar:** market search (press `/`), timeframe buttons, Indicators and **Replay**.
+  Every market is labelled **Live** (public BTC/ETH/SOL snapshots), **Replay** (ten
+  hourly recordings) or **Case** (the saved BTC example).
+- **Default view:** the Gold recording at 4h with candlestick pattern markers. It
+  always loads, even when the public price source is down.
+- **Chart:** Lightweight Charts candles. Bullish shapes are green arrows below the candle,
+  bearish ones red arrows above, neutral ones amber dots. The focused pattern's candles are
+  outlined in yellow and named in a one-line reading above the plot.
+- **Right panel:** *Patterns* (filter by shape with counts, newest-first list that jumps to
+  each match), *Trend* (a Murphy-style reading of direction, location and momentum, with
+  the EMA and Bollinger lines it refers to) and *Timeframes* (the same market at each speed).
+- **Bar replay:** rewinds 150 candles and plays them back at 1×, 2× or 4×, with a step
+  control, a slider and *Jump to end*. Indicators, patterns and higher-timeframe candles use
+  only the candles closed at the replay position. Shortcuts: `Space` play/pause,
+  `Shift+←/→` step.
+- **Drawing tools** (left rail): crosshair, trendline, horizontal level, measure, clear.
+- **Lower pane:** volume, Wilder RSI, MACD or off.
+- For hourly recordings at 4h, the Patterns tab offers an optional amber **forming 4h**
+  preview built only from already-closed hourly candles. It can disappear; confirmed
+  indicators and exports stay closed-only.
+- A short first-visit guide explains the three steps once; `?` reopens it.
+- **How it works** (`/about`) holds the problem statement, data paths, database and checks.
+- Export saves the candles of the current interval up to the replay position, with the source
+  and input hash — not orders or account data.
+- A separate live mid-price uses Hyperliquid's public WebSocket for Live markets and never
+  modifies replay. Stored candles appear only when the server has `DATABASE_URL`.
 
 The public root renders `MarketWorkspace.tsx`. Older local research integration
 files are excluded from this publication. It does not render the old inspector,
@@ -53,7 +55,7 @@ Scenario Lab, account metrics or localhost polling.
 ### Browser regression checks
 
 Start a built application, then run `npm run test:browser` (set `PF_BASE_URL`
-if it is not on `http://127.0.0.1:3000`). Install Chromium once with
+if it is not on `http://127.0.0.1:3000`, and `PF_CHROMIUM` to use an already installed Chromium). Install Chromium once with
 `npx playwright install chromium`. The tests use a **SYNTHETIC HTTP envelope**
 around committed recorded candles, not live market results. They cover the
 initial chart, each analysis preset, shape filters, replay, drawing controls,

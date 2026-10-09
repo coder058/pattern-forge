@@ -4,20 +4,25 @@ import { readFileSync } from 'node:fs';
 
 const workspace = readFileSync(new URL('../app/MarketWorkspace.tsx', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../app/workspace.css', import.meta.url), 'utf8');
+const about = readFileSync(new URL('../app/about/page.tsx', import.meta.url), 'utf8');
 
-test('introduction explains how to start and distinguishes snapshots from recordings', () => {
-  assert.match(workspace, /Choose a market and a timeframe below/);
-  assert.match(workspace, /Public quotes update automatically; Refresh reloads the chart’s closed candles/);
-  assert.match(workspace, /move the Replay slider back/);
+test('the product opens on a chart that always loads, with patterns marked', () => {
+  // SOURCE: 9 October redesign: chart first; a recording cannot fail like a live feed.
+  assert.match(workspace, /const DEFAULT_SOURCE = "recorded-XAUUSD"/);
+  assert.match(workspace, /patterns: true/);
+  assert.doesNotMatch(workspace, /<ProjectGuide/);
+  assert.doesNotMatch(workspace, /<table/);
   // SOURCE: one page title; the chart uses a subordinate section heading.
   assert.equal((workspace.match(/<h1\b/g) ?? []).length, 1);
-  assert.match(workspace, /Open BTC 5m/);
-  assert.match(workspace, /SOURCE_INTERVALS\(next\)\[0\]/);
+});
+
+test('replay and analysis keep the no-hindsight rules', () => {
   assert.match(workspace, /interval === active.base/);
-  assert.match(workspace, /chooseAnalysis/);
-  assert.match(workspace, /reading modes preserve user choices/);
+  assert.match(workspace, /b\.closeTime <= cutoff/);
   assert.match(workspace, /focusedPatternTime/);
   assert.match(workspace, /Murphy reading/);
+  assert.match(workspace, /SOURCE_INTERVALS\(next\)/);
+  assert.match(workspace, /Replay — later candles hidden/);
   assert.doesNotMatch(workspace, /kind === "recording" \? "1h"/);
 });
 
@@ -29,30 +34,25 @@ test('plot uses an explicit grid area independently of optional reading and evid
   assert.match(css, /grid-area: evidence/);
 });
 
-test('setup selection draws overlays and public UI excludes an unconfigured database', () => {
-  assert.match(workspace, /drawn automatically on the chart/);
-  assert.match(workspace, /aria-label="Candlestick pattern"/);
+test('failures point to a working recording and the public UI excludes an unconfigured database', () => {
+  assert.match(workspace, /Open the Gold recording/);
   assert.match(workspace, /storedEnabled \|\| s.kind !== "stored"/);
-  assert.match(workspace, /Open saved BTC recording/);
   const page = readFileSync(new URL('../app/page.tsx', import.meta.url), 'utf8');
   assert.match(page, /storedEnabled=\{Boolean\(process.env.DATABASE_URL\)\}/);
 });
 
-test('introduction has no viewport-height gate and controls expose keyboard focus', () => {
-  const intro = css.match(/\.mw-intro \{([^}]+)\}/)?.[1];
-  assert.ok(intro);
-  assert.doesNotMatch(intro, /min-height/);
+test('controls expose keyboard focus and shortcuts', () => {
   assert.match(css, /\.market-workspace button:focus-visible/);
+  assert.match(workspace, /event\.key === "\/"/);
+  assert.match(workspace, /event\.key === " "/);
 });
 
 test('walkthrough explains real database boundaries and links implementation evidence', () => {
   const guide = readFileSync(new URL('../app/ProjectGuide.tsx', import.meta.url), 'utf8');
   const schema = readFileSync(new URL('../ingest/schema.sql', import.meta.url), 'utf8');
-  assert.match(workspace, /<ProjectGuide \/>/);
-  assert.ok(workspace.indexOf('<ProjectGuide />') < workspace.indexOf('id="workspace"'));
-  assert.match(workspace, /publicMarkets.length/);
-  assert.match(workspace, /recordings.length/);
-  assert.match(workspace, /savedCases.length/);
+  assert.match(about, /<ProjectGuide open \/>/);
+  assert.match(about, /Problem and solution/);
+  assert.match(about, /catalog\.length/);
   for (const table of ['candles', 'ingest_runs']) {
     assert.ok(guide.includes(`<code>${table}</code>`));
     assert.ok(schema.includes(`CREATE TABLE IF NOT EXISTS ${table}`));

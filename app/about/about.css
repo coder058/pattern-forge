@@ -19,16 +19,21 @@
 .pf-guide tr:last-child > * { border-bottom: 0; }
 .pf-guide code { overflow-wrap: anywhere; }
 .pf-guide footer { padding-top: 24px; border-top: 1px solid #334155; }
-/* SOURCE: the public workspace has a light background; preserve readable contrast. */
-.mw-intro .pf-guide { width: 100%; max-width: none; padding: 8px 0; color: #292824; }
-.mw-intro .pf-guide tbody { background: #f6f1e0; color: #292824; }
-.mw-intro .pf-guide table { font-size: 16px; }
+/* SOURCE: standalone explanation page; editorial spacing only. */
+.pf-about { min-height: 100dvh; background: #131722; color: #d8e1ed; padding: 24px clamp(16px, 4vw, 48px) 64px; }
+.pf-about > nav, .pf-about > header, .pf-about > .pf-guide, .pf-about > .mw-build-guide { max-width: 1080px; margin-inline: auto; }
+.pf-about > nav { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.pf-about a { color: #8fb4ff; text-underline-offset: .25em; }
+.pf-about > header { padding: 40px 0 8px; }
+.pf-about h1 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.12; letter-spacing: -.03em; color: #f3f6fb; margin: 8px 0 18px; max-width: 22ch; }
+.pf-about > header p { font-size: 18px; line-height: 1.65; max-width: 70ch; color: #c3cedd; }
+.pf-about-kicker { color: #2962ff !important; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 13px !important; }
+.pf-about > .pf-guide { padding: 0; }
+.pf-about .mw-build-guide > summary { padding: 18px 0; color: #f3f6fb; font-weight: 600; cursor: pointer; }
+.pf-about .mw-build-guide .pf-guide { padding: 0; }
 @media (max-width: 700px) {
-  .mw-intro .pf-guide table { min-width: 0; }
-  .mw-intro .pf-guide thead { display: none; }
-  .mw-intro .pf-guide tr, .mw-intro .pf-guide td, .mw-intro .pf-guide tbody th { display: block; min-width: 0; width: 100%; }
-  .mw-intro .pf-guide tbody th { background: #ded5bf; }
-  .mw-intro .pf-guide td::before { display: block; font-weight: 700; margin-bottom: 4px; }
-  .mw-intro .pf-guide td:nth-child(2)::before { content: "What I built"; }
-  .mw-intro .pf-guide td:nth-child(3)::before { content: "What you can check"; }
+  .pf-guide table { min-width: 0; }
+  .pf-guide thead { display: none; }
+  .pf-guide tr, .pf-guide td, .pf-guide tbody th { display: block; min-width: 0; width: 100%; }
+  .pf-guide tbody th { background: #1c2333; }
 }
