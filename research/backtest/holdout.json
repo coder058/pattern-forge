@@ -1,0 +1,562 @@
+{
+ "alpha": 0.016666666666666666,
+ "runs": 1000,
+ "seed": 7,
+ "candidates": [
+  {
+   "key": "4h | Bearish engulfing | follow | none | hold 12",
+   "discovery": {
+    "trades": 103,
+    "meanBps": 95.28170667706537,
+    "tStat": 2.7284302674971146,
+    "profitFactor": 2.324956676950203,
+    "marketsPositive": 7,
+    "marketsTraded": 10
+   },
+   "holdout": {
+    "trades": 56,
+    "winRate": 0.375,
+    "meanBps": -94.99320415161303,
+    "medianBps": -37.15292828827609,
+    "stdBps": 368.44273207366155,
+    "tStat": -1.9293745978202528,
+    "profitFactor": 0.3350171967450369,
+    "totalBps": -5319.61943249033,
+    "maxDrawdownBps": 5421.672893133152,
+    "positiveMarkets": 2,
+    "tradedMarkets": 10,
+    "observedMeanBps": -94.99320415161303,
+    "nullMedianBps": -87.66699926979234,
+    "null95Bps": -8.61862973134799,
+    "pValue": 0.5474525474525475,
+    "perMarket": [
+     {
+      "id": "recorded-XAUUSD",
+      "trades": 6,
+      "winRate": 0.3333333333333333,
+      "meanBps": -57.53445097854535,
+      "medianBps": -48.327598004380235,
+      "stdBps": 89.86157524116426,
+      "tStat": -1.568301547690324,
+      "profitFactor": 0.17609329070545887,
+      "totalBps": -345.2067058712721,
+      "maxDrawdownBps": 383.41392528731245
+     },
+     {
+      "id": "recorded-XAGUSD",
+      "trades": 5,
+      "winRate": 0.6,
+      "meanBps": -42.992631624441984,
+      "medianBps": 26.407212673896133,
+      "stdBps": 156.73187266580766,
+      "tStat": -0.613368839462811,
+      "profitFactor": 0.47022372394819867,
+      "totalBps": -214.96315812220993,
+      "maxDrawdownBps": 268.25711629023095
+     },
+     {
+      "id": "recorded-WTIOILUSD",
+      "trades": 9,
+      "winRate": 0.3333333333333333,
+      "meanBps": -96.33856211603536,
+      "medianBps": -108.78029973260216,
+      "stdBps": 376.0632296283675,
+      "tStat": -0.7685295013652801,
+      "profitFactor": 0.44830569630151795,
+      "totalBps": -867.0470590443183,
+      "maxDrawdownBps": 954.2260511404335
+     },
+     {
+      "id": "recorded-SP500USD",
+      "trades": 8,
+      "winRate": 0.375,
+      "meanBps": -9.913721901361708,
+      "medianBps": -19.674524945254664,
+      "stdBps": 41.112397503439446,
+      "tStat": -0.6820385488502828,
+      "profitFactor": 0.5369185155826003,
+      "totalBps": -79.30977521089366,
+      "maxDrawdownBps": 171.26526946045544
+     },
+     {
+      "id": "recorded-NAS100USD",
+      "trades": 3,
+      "winRate": 0.6666666666666666,
+      "meanBps": 88.92464979800535,
+      "medianBps": 83.67245447821682,
+      "stdBps": 102.23980656035803,
+      "tStat": 1.5064779235912062,
+      "profitFactor": 26.196283372741064,
+      "totalBps": 266.77394939401603,
+      "maxDrawdownBps": 10.58782938132174
+     },
+     {
+      "id": "recorded-BTCUSD",
+      "trades": 6,
+      "winRate": 0.3333333333333333,
+      "meanBps": -283.3817738534978,
+      "medianBps": -74.88175338569334,
+      "stdBps": 655.0901240062052,
+      "tStat": -1.0596110716809857,
+      "profitFactor": 0.13069670358971783,
+      "totalBps": -1700.290643120987,
+      "maxDrawdownBps": 1921.1548237051402
+     },
+     {
+      "id": "recorded-ETHUSD",
+      "trades": 5,
+      "winRate": 0.2,
+      "meanBps": -391.42744897676306,
+      "medianBps": -168.76208918293844,
+      "stdBps": 828.7195031628435,
+      "tStat": -1.056157579049258,
+      "profitFactor": 0.14338954215569807,
+      "totalBps": -1957.1372448838154,
+      "maxDrawdownBps": 2284.7459156744803
+     },
+     {
+      "id": "recorded-SOLUSD",
+      "trades": 5,
+      "winRate": 0.6,
+      "meanBps": 23.1404254948966,
+      "medianBps": 34.27094960742717,
+      "stdBps": 158.7765725504904,
+      "tStat": 0.32588916364474196,
+      "profitFactor": 1.4630367635688253,
+      "totalBps": 115.702127474483,
+      "maxDrawdownBps": 249.87676266289634
+     },
+     {
+      "id": "recorded-HYPEUSD",
+      "trades": 3,
+      "winRate": 0,
+      "meanBps": -38.77106745847061,
+      "medianBps": -31.631247955214533,
+      "stdBps": 35.83574976563261,
+      "tStat": -1.8739236416410436,
+      "profitFactor": 0,
+      "totalBps": -116.31320237541183,
+      "maxDrawdownBps": 116.31320237541183
+     },
+     {
+      "id": "recorded-SPCXUSD",
+      "trades": 6,
+      "winRate": 0.3333333333333333,
+      "meanBps": -70.30462012165349,
+      "medianBps": -132.1290883956867,
+      "stdBps": 223.91837312670546,
+      "tStat": -0.7690768892859533,
+      "profitFactor": 0.48214337472139424,
+      "totalBps": -421.8277207299209,
+      "maxDrawdownBps": 633.565053682846
+     }
+    ]
+   },
+   "checks": {
+    "meanPositive": false,
+    "beatsRandom": false,
+    "halfOfMarkets": false,
+    "enoughTrades": true
+   },
+   "passed": false,
+   "external": {
+    "EURUSD": {
+     "trades": 52,
+     "winRate": 0.4423076923076923,
+     "meanBps": -11.32705314706963,
+     "medianBps": -4.829469517349192,
+     "stdBps": 57.579215682563074,
+     "tStat": -1.4185768401855152,
+     "profitFactor": 0.5695385512668875,
+     "totalBps": -589.0067636476208,
+     "maxDrawdownBps": 685.9622733137403,
+     "pValue": 0.25774225774225773,
+     "nullMedianBps": -15.936684224042665
+    },
+    "GOOG": {
+     "trades": 65,
+     "winRate": 0.3384615384615385,
+     "meanBps": -188.3058068457564,
+     "medianBps": -165.14644351464435,
+     "stdBps": 682.2877989946536,
+     "tStat": -2.2251166626881242,
+     "profitFactor": 0.47977370676608766,
+     "totalBps": -12239.877444974165,
+     "maxDrawdownBps": 14159.51594170373,
+     "pValue": 0.6503496503496503,
+     "nullMedianBps": -151.0997540167202
+    }
+   }
+  },
+  {
+   "key": "1h | Bearish engulfing | follow | extreme | hold 4",
+   "discovery": {
+    "trades": 65,
+    "meanBps": 32.98556002367132,
+    "tStat": 2.5175556266742576,
+    "profitFactor": 2.6826683349527864,
+    "marketsPositive": 9,
+    "marketsTraded": 10
+   },
+   "holdout": {
+    "trades": 14,
+    "winRate": 0.21428571428571427,
+    "meanBps": -125.15866895035835,
+    "medianBps": -28.694843495500983,
+    "stdBps": 350.01230006961686,
+    "tStat": -1.3379554321484086,
+    "profitFactor": 0.14729792408204767,
+    "totalBps": -1752.221365305017,
+    "maxDrawdownBps": 2022.7775347341133,
+    "positiveMarkets": 3,
+    "tradedMarkets": 9,
+    "observedMeanBps": -125.15866895035835,
+    "nullMedianBps": -23.960635227038093,
+    "null95Bps": 23.131890940918293,
+    "pValue": 0.987012987012987,
+    "perMarket": [
+     {
+      "id": "recorded-XAUUSD",
+      "trades": 1,
+      "winRate": 0,
+      "meanBps": -97.75935641832943,
+      "medianBps": -97.75935641832943,
+      "stdBps": 0,
+      "tStat": 0,
+      "profitFactor": 0,
+      "totalBps": -97.75935641832943,
+      "maxDrawdownBps": 97.75935641832943
+     },
+     {
+      "id": "recorded-XAGUSD",
+      "trades": 2,
+      "winRate": 0.5,
+      "meanBps": 0.6908039634200431,
+      "medianBps": 0.6908039634200431,
+      "stdBps": 25.59537014849762,
+      "tStat": 0.03816879100953562,
+      "profitFactor": 1.079366921457243,
+      "totalBps": 1.3816079268400863,
+      "maxDrawdownBps": 17.407855835562355
+     },
+     {
+      "id": "recorded-WTIOILUSD",
+      "trades": 3,
+      "winRate": 0,
+      "meanBps": -115.53696867470126,
+      "medianBps": -82.50221250190657,
+      "stdBps": 62.592962376652316,
+      "tStat": -3.1970990395514693,
+      "profitFactor": 0,
+      "totalBps": -346.61090602410377,
+      "maxDrawdownBps": 346.61090602410377
+     },
+     {
+      "id": "recorded-SP500USD",
+      "trades": 1,
+      "winRate": 0,
+      "meanBps": -20.307095940561112,
+      "medianBps": -20.307095940561112,
+      "stdBps": 0,
+      "tStat": 0,
+      "profitFactor": 0,
+      "totalBps": -20.307095940561112,
+      "maxDrawdownBps": 20.307095940561112
+     },
+     {
+      "id": "recorded-NAS100USD",
+      "trades": 1,
+      "winRate": 0,
+      "meanBps": -20.230864154004532,
+      "medianBps": -20.230864154004532,
+      "stdBps": 0,
+      "tStat": 0,
+      "profitFactor": 0,
+      "totalBps": -20.230864154004532,
+      "maxDrawdownBps": 20.230864154004532
+     },
+     {
+      "id": "recorded-BTCUSD",
+      "trades": 2,
+      "winRate": 0.5,
+      "meanBps": 0.8444057011080117,
+      "medianBps": 0.8444057011080117,
+      "stdBps": 17.667959159018686,
+      "tStat": 0.06758958314902733,
+      "profitFactor": 1.14497818112607,
+      "totalBps": 1.6888114022160234,
+      "maxDrawdownBps": 11.648728029961072
+     },
+     {
+      "id": "recorded-ETHUSD",
+      "trades": 0,
+      "winRate": 0,
+      "meanBps": 0,
+      "medianBps": 0,
+      "stdBps": 0,
+      "tStat": 0,
+      "profitFactor": 0,
+      "totalBps": 0,
+      "maxDrawdownBps": 0
+     },
+     {
+      "id": "recorded-SOLUSD",
+      "trades": 1,
+      "winRate": 0,
+      "meanBps": -228.80412602309616,
+      "medianBps": -228.80412602309616,
+      "stdBps": 0,
+      "tStat": 0,
+      "profitFactor": 0,
+      "totalBps": -228.80412602309616,
+      "maxDrawdownBps": 228.80412602309616
+     },
+     {
+      "id": "recorded-HYPEUSD",
+      "trades": 2,
+      "winRate": 0,
+      "meanBps": -656.0678027515372,
+      "medianBps": -656.0678027515372,
+      "stdBps": 875.3772812960718,
+      "tStat": -1.0599086865880534,
+      "profitFactor": 0,
+      "totalBps": -1312.1356055030744,
+      "maxDrawdownBps": 1312.1356055030744
+     },
+     {
+      "id": "recorded-SPCXUSD",
+      "trades": 1,
+      "winRate": 1,
+      "meanBps": 270.5561694290963,
+      "medianBps": 270.5561694290963,
+      "stdBps": 0,
+      "tStat": 0,
+      "profitFactor": null,
+      "totalBps": 270.5561694290963,
+      "maxDrawdownBps": 0
+     }
+    ]
+   },
+   "checks": {
+    "meanPositive": false,
+    "beatsRandom": false,
+    "halfOfMarkets": false,
+    "enoughTrades": false
+   },
+   "passed": false,
+   "external": {
+    "EURUSD": {
+     "trades": 41,
+     "winRate": 0.4634146341463415,
+     "meanBps": 2.0650608741250704,
+     "medianBps": -1.2404101785037351,
+     "stdBps": 20.68799689464327,
+     "tStat": 0.6391552262030881,
+     "profitFactor": 1.3215661934902225,
+     "totalBps": 84.6674958391279,
+     "maxDrawdownBps": 99.67233870710479,
+     "pValue": 0.04295704295704296,
+     "nullMedianBps": -2.9880447302861466
+    },
+    "GOOG": {
+     "trades": 9,
+     "winRate": 0.6666666666666666,
+     "meanBps": 183.20076669464,
+     "medianBps": 149.26117890967316,
+     "stdBps": 289.92792601310475,
+     "tStat": 1.8956514732529697,
+     "profitFactor": 7.33433914019614,
+     "totalBps": 1648.80690025176,
+     "maxDrawdownBps": 98.7631366208575,
+     "pValue": 0.055944055944055944,
+     "nullMedianBps": -32.711771889446624
+    }
+   }
+  },
+  {
+   "key": "1h | Shooting-star shape | follow | extreme | hold 4",
+   "discovery": {
+    "trades": 121,
+    "meanBps": 18.24683493221532,
+    "tStat": 1.5179607231906067,
+    "profitFactor": 1.5384084022614684,
+    "marketsPositive": 6,
+    "marketsTraded": 10
+   },
+   "holdout": {
+    "trades": 48,
+    "winRate": 0.3333333333333333,
+    "meanBps": -50.2876988191706,
+    "medianBps": -17.434032476846923,
+    "stdBps": 120.38709087240595,
+    "tStat": -2.8940262189021593,
+    "profitFactor": 0.14779270984307294,
+    "totalBps": -2413.809543320189,
+    "maxDrawdownBps": 2414.4128285367146,
+    "positiveMarkets": 2,
+    "tradedMarkets": 10,
+    "observedMeanBps": -50.2876988191706,
+    "nullMedianBps": -24.52584889709459,
+    "null95Bps": -2.390590997804071,
+    "pValue": 0.9310689310689311,
+    "perMarket": [
+     {
+      "id": "recorded-XAUUSD",
+      "trades": 6,
+      "winRate": 0.5,
+      "meanBps": -17.621609798128457,
+      "medianBps": -0.9390332064197331,
+      "stdBps": 42.73005809352217,
+      "tStat": -1.0101543123899197,
+      "profitFactor": 0.31934522182879055,
+      "totalBps": -105.72965878877075,
+      "maxDrawdownBps": 106.33294400529664
+     },
+     {
+      "id": "recorded-XAGUSD",
+      "trades": 6,
+      "winRate": 0.3333333333333333,
+      "meanBps": -50.05038521678227,
+      "medianBps": -35.00206523984038,
+      "stdBps": 93.6301029366953,
+      "tStat": -1.3093855647445483,
+      "profitFactor": 0.14870573978228438,
+      "totalBps": -300.3023113006936,
+      "maxDrawdownBps": 320.33275080993394
+     },
+     {
+      "id": "recorded-WTIOILUSD",
+      "trades": 3,
+      "winRate": 0,
+      "meanBps": -122.53389540794312,
+      "medianBps": -89.29228965112789,
+      "stdBps": 100.6158416279957,
+      "tStat": -2.1093590140663814,
+      "profitFactor": 0,
+      "totalBps": -367.60168622382935,
+      "maxDrawdownBps": 367.60168622382935
+     },
+     {
+      "id": "recorded-SP500USD",
+      "trades": 5,
+      "winRate": 0.4,
+      "meanBps": -16.390958780776664,
+      "medianBps": -21.04071345482693,
+      "stdBps": 20.762038231092227,
+      "tStat": -1.7653034659827607,
+      "profitFactor": 0.0965579893966415,
+      "totalBps": -81.95479390388331,
+      "maxDrawdownBps": 85.44021960078679
+     },
+     {
+      "id": "recorded-NAS100USD",
+      "trades": 4,
+      "winRate": 0,
+      "meanBps": -30.43854214471074,
+      "medianBps": -31.2832674421699,
+      "stdBps": 20.946781620976992,
+      "tStat": -2.906273879728454,
+      "profitFactor": 0,
+      "totalBps": -121.75416857884296,
+      "maxDrawdownBps": 121.75416857884296
+     },
+     {
+      "id": "recorded-BTCUSD",
+      "trades": 6,
+      "winRate": 0.5,
+      "meanBps": 6.535135296776015,
+      "medianBps": 1.935956750277927,
+      "stdBps": 33.107625968919564,
+      "tStat": 0.48350633452790404,
+      "profitFactor": 1.6936104401881835,
+      "totalBps": 39.21081178065609,
+      "maxDrawdownBps": 53.398319982798284
+     },
+     {
+      "id": "recorded-ETHUSD",
+      "trades": 10,
+      "winRate": 0.2,
+      "meanBps": -109.84713334031014,
+      "medianBps": -24.866461664722713,
+      "stdBps": 224.01358380102815,
+      "tStat": -1.5506521073478117,
+      "profitFactor": 0.10953488552294365,
+      "totalBps": -1098.4713334031014,
+      "maxDrawdownBps": 1124.7242976943119
+     },
+     {
+      "id": "recorded-SOLUSD",
+      "trades": 1,
+      "winRate": 1,
+      "meanBps": 11.41603838245399,
+      "medianBps": 11.41603838245399,
+      "stdBps": 0,
+      "tStat": 0,
+      "profitFactor": null,
+      "totalBps": 11.41603838245399,
+      "maxDrawdownBps": 0
+     },
+     {
+      "id": "recorded-HYPEUSD",
+      "trades": 4,
+      "winRate": 0.5,
+      "meanBps": -27.783302275548408,
+      "medianBps": -2.6055754691385182,
+      "stdBps": 99.45293389541892,
+      "tStat": -0.5587226276253311,
+      "profitFactor": 0.3688030433167515,
+      "totalBps": -111.13320910219363,
+      "maxDrawdownBps": 169.37312353047582
+     },
+     {
+      "id": "recorded-SPCXUSD",
+      "trades": 3,
+      "winRate": 0.3333333333333333,
+      "meanBps": -92.49641072732767,
+      "medianBps": -69.27650506126824,
+      "stdBps": 106.5953800405275,
+      "tStat": -1.5029589728614812,
+      "profitFactor": 0.002068110179051914,
+      "totalBps": -277.489232181983,
+      "maxDrawdownBps": 277.489232181983
+     }
+    ]
+   },
+   "checks": {
+    "meanPositive": false,
+    "beatsRandom": false,
+    "halfOfMarkets": false,
+    "enoughTrades": true
+   },
+   "passed": false,
+   "external": {
+    "EURUSD": {
+     "trades": 50,
+     "winRate": 0.54,
+     "meanBps": -0.2787784798152984,
+     "medianBps": 0.9331820322203717,
+     "stdBps": 18.07119965430032,
+     "tStat": -0.10908304777616985,
+     "profitFactor": 0.9600400801099402,
+     "totalBps": -13.93892399076492,
+     "maxDrawdownBps": 158.68575209865793,
+     "pValue": 0.13486513486513488,
+     "nullMedianBps": -2.9503151860655614
+    },
+    "GOOG": {
+     "trades": 11,
+     "winRate": 0.45454545454545453,
+     "meanBps": -106.5909709849116,
+     "medianBps": -169.09848636393775,
+     "stdBps": 402.36796415846874,
+     "tStat": -0.8786043827718343,
+     "profitFactor": 0.5069363898577133,
+     "totalBps": -1172.5006808340277,
+     "maxDrawdownBps": 1408.0935434083208,
+     "pValue": 0.7382617382617382,
+     "nullMedianBps": -37.26156805283975
+    }
+   }
+  }
+ ]
+}
