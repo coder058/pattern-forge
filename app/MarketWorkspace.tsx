@@ -291,7 +291,11 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
       if (tf && intervals.includes(tf)) setTimeframe(tf);
     }
     const nextTab = q.get("tab") as Tab | null;
-    if (nextTab && ["patterns", "trend", "timeframes", "backtest", "case"].includes(nextTab)) setTab(nextTab);
+    if (nextTab && ["patterns", "trend", "timeframes", "backtest", "case"].includes(nextTab)) {
+      setTab(nextTab);
+      // Same as opening the tab by hand: the trend reading shows the lines it refers to.
+      if (nextTab === "trend") setLayers((v) => ({ ...v, ema: true, bollinger: true }));
+    }
     const shapes = q.get("shapes")?.split(",").filter((n) => PATTERN_NAMES.includes(n));
     if (shapes?.length) setShown(shapes);
     urlRead.current = true;
@@ -602,7 +606,8 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             ) : error ? (
               <div className="pf-empty" role="alert">
                 <h2>{source.label} is not loading right now</h2>
-                <p>{error} Recordings always work, even offline.</p>
+                <p>The live price source did not answer. Try again in a moment, or open a recording — recordings always load.</p>
+                <p className="pf-error-detail">{error}</p>
                 <div>
                   <button className="pf-primary" onClick={() => selectMarket(DEFAULT_SOURCE)}>Open the Gold recording</button>
                   <button onClick={() => setRevision((n) => n + 1)}>Try again</button>

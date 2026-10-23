@@ -36,4 +36,8 @@
   .pf-guide thead { display: none; }
   .pf-guide tr, .pf-guide td, .pf-guide tbody th { display: block; min-width: 0; width: 100%; }
   .pf-guide tbody th { background: #1c2333; }
+  /* Stacked rows keep their column names. */
+  .pf-guide td::before { display: block; font-weight: 700; color: #f3f6fb; margin-bottom: 4px; }
+  .pf-guide [aria-label="Problem and solution"] td:nth-child(2)::before { content: "What I built"; }
+  .pf-guide [aria-label="Problem and solution"] td:nth-child(3)::before { content: "What you can check"; }
 }
