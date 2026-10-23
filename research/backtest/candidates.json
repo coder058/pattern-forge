@@ -1,0 +1,71 @@
+[
+  {
+    "key": "1h | Bearish engulfing | follow | extreme | hold 4",
+    "config": {
+      "timeframe": "1h",
+      "strategy": {
+        "signal": "Bearish engulfing",
+        "mode": "follow",
+        "filter": "extreme",
+        "exit": {
+          "kind": "hold",
+          "bars": 4
+        }
+      }
+    },
+    "discovery": {
+      "trades": 65,
+      "meanBps": 32.98556002367132,
+      "tStat": 2.5175556266742576,
+      "profitFactor": 2.6826683349527864,
+      "marketsPositive": 9,
+      "marketsTraded": 10
+    }
+  },
+  {
+    "key": "4h | Bearish engulfing | follow | none | hold 12",
+    "config": {
+      "timeframe": "4h",
+      "strategy": {
+        "signal": "Bearish engulfing",
+        "mode": "follow",
+        "filter": "none",
+        "exit": {
+          "kind": "hold",
+          "bars": 12
+        }
+      }
+    },
+    "discovery": {
+      "trades": 104,
+      "meanBps": 84.99914613556734,
+      "tStat": 2.4802781348772815,
+      "profitFactor": 2.1247702919394253,
+      "marketsPositive": 6,
+      "marketsTraded": 10
+    }
+  },
+  {
+    "key": "4h | Bearish engulfing | follow | none | hold 4",
+    "config": {
+      "timeframe": "4h",
+      "strategy": {
+        "signal": "Bearish engulfing",
+        "mode": "follow",
+        "filter": "none",
+        "exit": {
+          "kind": "hold",
+          "bars": 4
+        }
+      }
+    },
+    "discovery": {
+      "trades": 144,
+      "meanBps": 26.44168387523847,
+      "tStat": 1.538638048953344,
+      "profitFactor": 1.4917553565427621,
+      "marketsPositive": 5,
+      "marketsTraded": 10
+    }
+  }
+]
