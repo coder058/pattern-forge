@@ -1,5 +1,28 @@
 [
   {
+    "key": "4h | Bearish engulfing | follow | none | hold 12",
+    "config": {
+      "timeframe": "4h",
+      "strategy": {
+        "signal": "Bearish engulfing",
+        "mode": "follow",
+        "filter": "none",
+        "exit": {
+          "kind": "hold",
+          "bars": 12
+        }
+      }
+    },
+    "discovery": {
+      "trades": 103,
+      "meanBps": 95.28170667706537,
+      "tStat": 2.7284302674971146,
+      "profitFactor": 2.324956676950203,
+      "marketsPositive": 7,
+      "marketsTraded": 10
+    }
+  },
+  {
     "key": "1h | Bearish engulfing | follow | extreme | hold 4",
     "config": {
       "timeframe": "1h",
@@ -23,36 +46,13 @@
     }
   },
   {
-    "key": "4h | Bearish engulfing | follow | none | hold 12",
+    "key": "1h | Shooting-star shape | follow | extreme | hold 4",
     "config": {
-      "timeframe": "4h",
+      "timeframe": "1h",
       "strategy": {
-        "signal": "Bearish engulfing",
+        "signal": "Shooting-star shape",
         "mode": "follow",
-        "filter": "none",
-        "exit": {
-          "kind": "hold",
-          "bars": 12
-        }
-      }
-    },
-    "discovery": {
-      "trades": 104,
-      "meanBps": 84.99914613556734,
-      "tStat": 2.4802781348772815,
-      "profitFactor": 2.1247702919394253,
-      "marketsPositive": 6,
-      "marketsTraded": 10
-    }
-  },
-  {
-    "key": "4h | Bearish engulfing | follow | none | hold 4",
-    "config": {
-      "timeframe": "4h",
-      "strategy": {
-        "signal": "Bearish engulfing",
-        "mode": "follow",
-        "filter": "none",
+        "filter": "extreme",
         "exit": {
           "kind": "hold",
           "bars": 4
@@ -60,11 +60,11 @@
       }
     },
     "discovery": {
-      "trades": 144,
-      "meanBps": 26.44168387523847,
-      "tStat": 1.538638048953344,
-      "profitFactor": 1.4917553565427621,
-      "marketsPositive": 5,
+      "trades": 121,
+      "meanBps": 18.24683493221532,
+      "tStat": 1.5179607231906067,
+      "profitFactor": 1.5384084022614684,
+      "marketsPositive": 6,
       "marketsTraded": 10
     }
   }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { atr, backtest, context, randomBaseline, signalAt, stats, tradeFrom } from '../app/backtest.ts';
+import { atr, backtest, context, dropBadPrints, randomBaseline, signalAt, stats, tradeFrom } from '../app/backtest.ts';
 
 const H = 3600000;
 // SYNTHETIC hourly candles: [open, high, low, close].
@@ -86,4 +86,18 @@ test('statistics and the random baseline are reproducible', () => {
   const b = randomBaseline([{ ctx, from: 0, to: 80, trades }], follow1, noCost, 50, 3);
   assert.deepEqual(a, b);
   assert.ok(a.pValue > 0 && a.pValue <= 1);
+});
+
+test('isolated bad prints are dropped, real trends are kept', () => {
+  const steady = Array.from({ length: 12 }, (_, i) => [100 + i, 101 + i, 99 + i, 100.5 + i]);
+  const spiked = steady.map((r) => [...r]);
+  spiked[0] = [4800, 4800, 4800, 4800];       // another market's price at the start
+  spiked[6] = [106, 106.5, 40, 106.2];        // a wick to a round number
+  const { bars, dropped } = dropBadPrints(make(spiked));
+  assert.deepEqual(dropped.map((b) => b.t / H), [0, 6]);
+  assert.equal(bars.length, 10);
+  assert.equal(dropBadPrints(make(steady)).dropped.length, 0);
+  // A sustained 2x move over many candles is not a bad print.
+  const rally = Array.from({ length: 30 }, (_, i) => { const p = 100 * 1.03 ** i; return [p, p * 1.01, p * 0.99, p * 1.03]; });
+  assert.equal(dropBadPrints(make(rally)).dropped.length, 0);
 });

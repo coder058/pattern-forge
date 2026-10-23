@@ -32,7 +32,7 @@ writeFileSync(new URL('./discovery.json', import.meta.url), JSON.stringify({
   configsTested: rows.length,
   configsWithEnoughTrades: ranked.length,
   configsPositiveAfterCosts: positive.length,
-  markets: markets.map((m) => ({ id: m.id, sha256: m.sha256, splitTime: new Date(m.split).toISOString() })),
+  markets: markets.map((m) => ({ id: m.id, sha256: m.sha256, badPrintsDropped: m.dropped, splitTime: new Date(m.split).toISOString() })),
   rows: rows.sort((a, b) => b.tStat - a.tStat),
 }, null, 1));
 writeFileSync(new URL('./candidates.json', import.meta.url), JSON.stringify(candidates, null, 2) + '\n');

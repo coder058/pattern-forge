@@ -65,6 +65,32 @@ export const PATTERN_SIDE: Record<TradedPattern, Side> = {
   "Shooting-star shape": -1,
 };
 
+// GUESS: UNCALIBRATED GUESS — an hourly print more than 20% away from its neighbours'
+// median close is treated as a bad print (one recording starts at another market's price;
+// isolated wicks to round numbers revert within the hour). Real moves rarely do this.
+export const BAD_PRINT_SHARE = 0.2;
+const NEIGHBOURS = 3;
+
+/**
+ * Drop isolated bad prints: a candle whose open, high, low or close lies more than
+ * BAD_PRINT_SHARE from the median close of up to three candles on each side. Dropped
+ * candles become gaps, so no signal or trade uses them. This looks at later candles,
+ * so it is a data-cleaning step for recorded history, never part of a live signal.
+ */
+export function dropBadPrints(bars: Bar[], share = BAD_PRINT_SHARE): { bars: Bar[]; dropped: Bar[] } {
+  const kept: Bar[] = [];
+  const dropped: Bar[] = [];
+  bars.forEach((bar, i) => {
+    const around = [...bars.slice(Math.max(0, i - NEIGHBOURS), i), ...bars.slice(i + 1, i + 1 + NEIGHBOURS)]
+      .map((b) => b.c).sort((a, b) => a - b);
+    if (!around.length) { kept.push(bar); return; }
+    const mid = around.length % 2 ? around[(around.length - 1) / 2] : (around[around.length / 2 - 1] + around[around.length / 2]) / 2;
+    const bad = [bar.o, bar.h, bar.l, bar.c].some((p) => Math.abs(p / mid - 1) > share);
+    (bad ? dropped : kept).push(bar);
+  });
+  return { bars: kept, dropped };
+}
+
 /** Wilder ATR; value at i uses candles 0..i only. */
 export function atr(bars: Bar[], period = ATR_PERIOD): (number | null)[] {
   const out: (number | null)[] = bars.map(() => null);

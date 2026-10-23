@@ -1,7 +1,7 @@
 // Shared data loading and strategy grid for the pattern backtest study.
 import { readFileSync } from 'node:fs';
 import { aggregateBars } from '../../app/marketAnalysis.ts';
-import { context, TRADED_PATTERNS } from '../../app/backtest.ts';
+import { context, dropBadPrints, TRADED_PATTERNS } from '../../app/backtest.ts';
 
 const root = new URL('../../', import.meta.url);
 // SOURCE: the study's frozen split: earlier 60% of each market for discovery, later 40% held out.
@@ -13,7 +13,8 @@ export function loadRecordings() {
   const catalog = JSON.parse(readFileSync(new URL('public/recordings/catalog.json', root)));
   return catalog.map((item) => {
     const doc = JSON.parse(readFileSync(new URL(`public${item.path}`, root)));
-    const hourly = doc.candles;
+    // Amendment 1: isolated bad prints become gaps before anything is computed.
+    const { bars: hourly, dropped } = dropBadPrints(doc.candles);
     // One time boundary per market, applied to every timeframe.
     const split = hourly[Math.floor(hourly.length * DISCOVERY_SHARE)].t;
     const frames = {
@@ -24,6 +25,7 @@ export function loadRecordings() {
       id: item.id,
       label: item.label,
       sha256: item.sourceSha256,
+      dropped: dropped.length,
       split,
       frames: Object.fromEntries(Object.entries(frames).map(([tf, bars]) => {
         const at = bars.findIndex((b) => b.closeTime > split);

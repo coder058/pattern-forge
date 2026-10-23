@@ -6,3 +6,4 @@ node_modules/
 test-results/
 __pycache__/
 .github/
+research/backtest/.cache/

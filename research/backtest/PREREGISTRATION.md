@@ -67,3 +67,21 @@ was traded live. A candidate that fails is reported as failing, with its numbers
 - No change to the grid, costs, split or criteria after seeing holdout results.
 - No second holdout attempt with a modified rule presented as the same test.
 - Any later exploration is labelled exploratory in the report.
+
+## Amendment 1 — 23 October 2026, after discovery, before any holdout run
+
+The first discovery run (commit `18dab9d`, kept in history) used uncleaned recordings.
+Checking why Silver's discovery window showed −98.8% revealed bad prints: Silver's first
+candle carries Gold's price (4,834.4 vs ~79), and several markets have isolated wicks to
+round numbers that revert within the hour (BTC high 126,570; ETH low 100; Silver lows 40.0).
+Trades through such candles produce returns no one could have traded.
+
+Change: before any calculation, `dropBadPrints` (in `app/backtest.ts`, tested) removes a
+candle if its open, high, low or close lies more than 20% from the median close of up to
+three neighbouring candles on each side. Removed candles become gaps. It removes 14 of
+about 20,000 hourly candles (BTC 1, ETH 2, SOL 2, SPCX 2, WTI 2, Silver 3). The rule uses
+neighbouring candles, so it is a cleaning step for recorded history, not a trading signal.
+
+Discovery is re-run on the cleaned data and candidates are re-selected with the unchanged
+rule. Grid, costs, split, selection and pass criteria are unchanged. The holdout window
+remains untouched.
