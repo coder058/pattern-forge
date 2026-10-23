@@ -170,6 +170,8 @@ type ChartRefs = {
 // # GUESS: UNCALIBRATED GUESS — the initial 96-bar viewport is presentation-only so individual
 // candles remain readable; it is not a trading lookback or calibrated input.
 const INITIAL_VISIBLE_BARS = 96;
+// GUESS: UNCALIBRATED GUESS — below this many visible candles every marker has room for its name.
+const LABEL_ALL_BELOW_BARS = 70;
 // # GUESS: UNCALIBRATED GUESS — six future slots are presentation whitespace for current-price and
 // target labels; they do not alter evidence or plan calculations.
 const RIGHT_OFFSET_BARS = 6;
@@ -244,9 +246,9 @@ function directionTone(direction: string): "bull" | "bear" | "neutral" {
 function shortPatternName(name: string): string {
   if (name === "Doji") return "Doji";
   if (name.startsWith("Hammer")) return "Hammer";
-  if (name.toLowerCase().includes("star")) return "Star";
-  if (name.startsWith("Bullish")) return "Engulf↑";
-  if (name.startsWith("Bearish")) return "Engulf↓";
+  if (name.toLowerCase().includes("star")) return "Shooting star";
+  if (name.startsWith("Bullish")) return "Bull engulfing";
+  if (name.startsWith("Bearish")) return "Bear engulfing";
   return name.split(" ")[0] ?? name;
 }
 
@@ -340,6 +342,7 @@ export function ProfessionalChart({
     useState<ProfessionalChartCandle | null>(null);
   const [visibleRange, setVisibleRange] = useState("—");
   const [chartReady, setChartReady] = useState(false);
+  const [labelAll, setLabelAll] = useState(false);
 
   useEffect(() => {
     drawingsRef.current = drawings;
@@ -627,6 +630,7 @@ export function ProfessionalChart({
       setVisibleRange(
         range ? `${range.from.toFixed(2)}:${range.to.toFixed(2)}` : "—",
       );
+      setLabelAll(Boolean(range && range.to - range.from <= LABEL_ALL_BELOW_BARS));
       window.requestAnimationFrame(drawOverlay);
     };
     const handleCrosshair = (param: Parameters<Parameters<IChartApi["subscribeCrosshairMove"]>[0]>[0]) => {
@@ -737,11 +741,11 @@ export function ProfessionalChart({
     // SOURCE: name only the chosen candle; other markers stay visible without
     // overlapping labels. The result list retains every pattern name.
     const compactPatternMarkers = groups.map((group) =>
-      markerForGroup(group, group.id === selectedGroup?.id),
+      markerForGroup(group, labelAll || group.id === selectedGroup?.id),
     );
     const contextMarkers: SeriesMarker<Time>[] = reading?.anchor
       ? [{ id: "murphy-context", time: toChartTime(reading.anchor.time),
-          position: "aboveBar", shape: "circle", color: reading.provisional ? "#e8b35b" : "#b2a4ff", text: reading.provisional ? "Forming" : "Setup" }]
+          position: "aboveBar", shape: "circle", color: reading.provisional ? "#e8b35b" : "#b2a4ff", text: reading.provisional ? "Forming" : reading.anchor.label }]
       : [];
     const activePlan = data.overlays.plans.at(-1);
     const caseStudyPlan = data.overlays.caseStudy;
@@ -874,7 +878,7 @@ export function ProfessionalChart({
       resetView();
     }
     window.requestAnimationFrame(drawOverlay);
-  }, [data, groups, layers, resetView, drawOverlay, timeframe, lowerPanel, oscillatorData, reading, selectedGroup, provisionalCandle]);
+  }, [data, groups, layers, resetView, drawOverlay, timeframe, lowerPanel, oscillatorData, reading, selectedGroup, provisionalCandle, labelAll]);
 
   useEffect(() => {
     const refs = chartRef.current;
@@ -1121,57 +1125,7 @@ export function ProfessionalChart({
         {lowerPanel !== "none" && <span className="mw-pane-label">{lowerPanel === "volume" ? "Volume" : lowerPanel === "rsi" ? "RSI 14" : "MACD 12 / 26 / 9"}</span>}
       </div>
 
-      {selectedGroup && layers.patterns && (
-          <details className="pattern-detail-card">
-            <summary>Details of the selected pattern</summary>
-            <header>
-              <span>Pattern on this candle</span>
-              <button
-                type="button"
-                aria-label="Close pattern details"
-                onClick={() => setSelectedGroup(null)}
-              >
-                ×
-              </button>
-            </header>
-            <strong>
-              {selectedGroup.patterns.length === 1
-                ? humanize(selectedGroup.patterns[0].name)
-                : `${selectedGroup.patterns.length} patterns confirmed`}
-            </strong>
-            <dl>
-              <div>
-                <dt>Candle</dt>
-                <dd>{formatTime(selectedGroup.patterns[0].time)}</dd>
-              </div>
-              <div>
-                <dt>Known at close</dt>
-                <dd>
-                  {formatTime(
-                    selectedGroup.patterns[0].knownAt ??
-                      selectedGroup.patterns[0].time,
-                  )}
-                </dd>
-              </div>
-            </dl>
-            <ul>
-              {selectedGroup.patterns.map((pattern, index) => (
-                <li key={`${pattern.name}-${String(pattern.time)}-${index}`}>
-                  <i className={`tone-${directionTone(pattern.direction)}`} />
-                  <span>
-                    {humanize(pattern.name)}
-                    <small>
-                      {pattern.variant
-                        ? pattern.variant
-                        : humanize(pattern.direction)}
-                    </small>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <p>Pattern evidence only. It is not an order or profitability claim.</p>
-          </details>
-        )}
+
 
       <p className="sr-only">
         Pan with drag, zoom with the mouse wheel or pinch, inspect with the

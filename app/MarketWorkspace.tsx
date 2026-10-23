@@ -34,6 +34,7 @@ type Tab = "patterns" | "trend" | "timeframes" | "backtest" | "case";
 type LowerPane = "none" | "volume" | "rsi" | "macd";
 // SOURCE: detector names implemented in marketAnalysis.calculateChart.
 const PATTERN_NAMES = ["Bullish engulfing", "Bearish engulfing", "Hammer shape", "Shooting-star shape", "Doji"];
+const DEFAULT_SHAPES = ["Bullish engulfing", "Bearish engulfing"];
 // SOURCE: plain-language glossary for the detector rules in docs/reading-rules.md.
 const PATTERN_HELP: Record<string, string> = {
   "Bullish engulfing": "A rising candle whose body covers the previous falling body.",
@@ -95,11 +96,17 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   const [fastPeriod, setFastPeriod] = useState(DEFAULT_INDICATORS.fast);
   const [slowPeriod, setSlowPeriod] = useState(DEFAULT_INDICATORS.slow);
   const [highlightTime, setHighlightTime] = useState<number | null>(null);
-  const [patternName, setPatternName] = useState("all");
+  // SOURCE: editorial default — the two-candle engulfing shapes are the clearest marks;
+  // single-candle shapes are one click away instead of crowding the first view.
+  const [shown, setShown] = useState<string[]>(DEFAULT_SHAPES);
   const [previewForming, setPreviewForming] = useState(false);
   const [lowerPanel, setLowerPanel] = useState<LowerPane>("volume");
   const [guideOpen, setGuideOpen] = useState(false);
   const [showAllHits, setShowAllHits] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const urlRead = useRef(false);
+  const seen = useRef({ count: 0, key: "" });
   const workspaceRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const source = SOURCES.find((s) => s.id === sourceId)!;
@@ -182,15 +189,15 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   );
   const bars = frames[timeframe] ?? [];
   const canPreview = source.kind === "recording" && replayBase === "1h" && timeframe === "4h" &&
-    tab === "patterns" && (patternName === "all" || patternName.endsWith("engulfing"));
+    tab === "patterns" && shown.some((name) => name.endsWith("engulfing"));
   const showingForming = canPreview && previewForming;
   const provisional = useMemo(() => (showingForming ? formingFourHour(baseBars, cutoff) : null),
     [showingForming, baseBars, cutoff]);
   const chart = useMemo(() => {
     const result = calculateChart(bars, fastPeriod, slowPeriod);
-    if (patternName !== "all") result.overlays.patterns = result.overlays.patterns.filter((p) => p.name === patternName);
+    result.overlays.patterns = result.overlays.patterns.filter((p) => shown.includes(p.name));
     return result;
-  }, [bars, fastPeriod, slowPeriod, patternName]);
+  }, [bars, fastPeriod, slowPeriod, shown]);
   const oscillatorData = useMemo(
     () => (lowerPanel === "rsi" ? { line: rsi(bars) } : lowerPanel === "macd" ? macd(bars) : undefined),
     [bars, lowerPanel],
@@ -213,7 +220,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   );
   const chartReading = useMemo((): ChartReading | null => {
     if (showingForming) {
-      const match = provisional?.shape && (patternName === "all" || patternName === provisional.shape);
+      const match = provisional?.shape && shown.includes(provisional.shape);
       return {
         kicker: "Forming preview · closed 1h observations only",
         setup: provisional ? (match ? `${provisional.shape} · provisional` : "No selected engulfing shape yet") : "No partial 4h candle available",
@@ -241,15 +248,64 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
         kicker: "Candlestick pattern",
         setup: focused.map((p) => p.name).join(" · ") || "No matching pattern",
         sentence: focused[0]
-          ? `${focused.map((p) => p.name).join(" + ")} · ${stamp(Number(focused[0].time))} UTC — ${PATTERN_HELP[focused[0].name] ?? focused[0].variant}`
+          ? `${focused.map((p) => p.name).join(" + ")} · known at the ${timeframe} close, ${stamp(Number(focused[0].knownAt ?? focused[0].time))} UTC — ${PATTERN_HELP[focused[0].name] ?? focused[0].variant}`
           : "No matching pattern in the visible history. Try another pattern, timeframe or market.",
         steps: [],
         because: "Shapes describe closed candles only. They are not a forecast.",
       };
     }
     return null;
-  }, [tab, focused, murphy, last, showingForming, provisional, patternName, layers.patterns]);
+  }, [tab, focused, murphy, last, showingForming, provisional, shown, layers.patterns, timeframe]);
   const change = last && prev ? (last.c / prev.c - 1) * 100 : undefined;
+
+  // During playback, announce each shape the moment its candle closes.
+  useEffect(() => {
+    const key = `${sourceId}|${timeframe}|${shown.join()}`;
+    const before = seen.current;
+    seen.current = { count: patterns.length, key };
+    if (!playing || before.key !== key || patterns.length <= before.count) return;
+    const p = patterns.at(-1)!;
+    setNotice(`${p.name} · known at the ${timeframe} close, ${stamp(Number(p.knownAt ?? p.time))} UTC`);
+  }, [patterns, playing, sourceId, timeframe, shown]);
+  useEffect(() => {
+    if (!notice) return;
+    // GUESS: UNCALIBRATED GUESS — long enough to read one line, short enough not to pile up.
+    const timer = setTimeout(() => setNotice(null), 2600);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  // Shareable view: ?market=…&tf=…&tab=…&shapes=… (read once, then kept in sync).
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const market = SOURCES.find((s) => s.id === q.get("market") && (storedEnabled || s.kind !== "stored"));
+    if (market) {
+      setSourceId(market.id);
+      const tf = q.get("tf") as Interval | null;
+      if (tf && SOURCE_INTERVALS(market).includes(tf)) setTimeframe(tf);
+      else if (market.kind === "case") setTimeframe("5m");
+    } else {
+      const tf = q.get("tf") as Interval | null;
+      if (tf && intervals.includes(tf)) setTimeframe(tf);
+    }
+    const nextTab = q.get("tab") as Tab | null;
+    if (nextTab && ["patterns", "trend", "timeframes", "backtest", "case"].includes(nextTab)) setTab(nextTab);
+    const shapes = q.get("shapes")?.split(",").filter((n) => PATTERN_NAMES.includes(n));
+    if (shapes?.length) setShown(shapes);
+    urlRead.current = true;
+    // Read once on mount; later changes are written below.
+  }, []);
+  useEffect(() => {
+    if (!urlRead.current) return;
+    const q = new URLSearchParams({ market: sourceId, tf: timeframe, tab, shapes: shown.join(",") });
+    window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
+  }, [sourceId, timeframe, tab, shown]);
+  const share = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch { /* clipboard blocked: the address bar already holds the link */ }
+  };
   const filtered = availableSources.filter((s) =>
     `${s.symbol} ${s.label} ${s.group}`.toLowerCase().includes(query.toLowerCase()),
   );
@@ -290,7 +346,10 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   };
   const toggle = (layer: keyof ProfessionalLayerState) => setLayers((v) => ({ ...v, [layer]: !v[layer] }));
   const choosePattern = (name: string) => {
-    setPatternName(name);
+    // "all" switches every shape on; a shape toggles, but at least one stays on.
+    setShown((current) => name === "all" ? PATTERN_NAMES
+      : current.includes(name) ? (current.length > 1 ? current.filter((n) => n !== name) : current)
+      : PATTERN_NAMES.filter((n) => n === name || current.includes(n)));
     setHighlightTime(null);
     setLayers((v) => ({ ...v, patterns: true }));
   };
@@ -470,6 +529,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
           </button>
         )}
         <div className="pf-top-right">
+          <button className="pf-ghost" onClick={share} title="Copy a link to this exact view">{copied ? "Link copied ✓" : "Share"}</button>
           <button className="pf-ghost" onClick={() => setGuideOpen(true)} aria-label="Show the quick guide">?</button>
           <a className="pf-ghost" href="/about">How it works</a>
           <a className="pf-ghost pf-hide-sm" href="https://github.com/coder058/pattern-forge" target="_blank" rel="noreferrer">GitHub ↗</a>
@@ -561,6 +621,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                 provisionalCandle={provisional?.bar}
               />
             )}
+            {notice && <div className="pf-toast" role="status"><span aria-hidden="true">◆</span> New pattern: {notice}</div>}
             {guideOpen && (
               <aside className="pf-guide-card" aria-label="Quick guide">
                 <h2>Read a chart without hindsight</h2>
@@ -631,16 +692,16 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
               ) : tab === "patterns" ? (
                 <>
                   <div className="pf-filter" role="group" aria-label="Candlestick pattern">
-                    <button aria-pressed={patternName === "all"} onClick={() => choosePattern("all")}>All</button>
+                    <button aria-pressed={shown.length === PATTERN_NAMES.length} onClick={() => choosePattern("all")}>All</button>
                     {PATTERN_NAMES.map((name) => (
-                      <button key={name} aria-pressed={patternName === name} onClick={() => choosePattern(name)}>
+                      <button key={name} aria-pressed={shown.includes(name)} onClick={() => choosePattern(name)} title={PATTERN_HELP[name]}>
                         <i className={`pf-dot ${tone(name)}`} aria-hidden="true" />
                         {name.replace(" shape", "").replace("-shape", "")}
                         <small>{counts[name] ?? 0}</small>
                       </button>
                     ))}
                   </div>
-                  {patternName !== "all" && <p className="pf-help">{PATTERN_HELP[patternName]}</p>}
+                  <p className="pf-help">Tap a shape to show or hide it.{shown.length <= 2 && <> {shown.map((n) => <span key={n}><b>{n}:</b> {PATTERN_HELP[n]} </span>)}</>}</p>
                   {canPreview && (
                     <label className="pf-check">
                       <input type="checkbox" checked={previewForming} onChange={(e) => setPreviewForming(e.target.checked)} />
@@ -700,7 +761,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                   key={`${sourceId}-${timeframe}`}
                   bars={bars}
                   timeframe={timeframe}
-                  initialSignal={patternName}
+                  initialSignal={shown.find((n) => n !== "Doji")}
                   onPick={(time) => { setHighlightTime(time); setLayers((v) => ({ ...v, patterns: true })); }}
                 />
               ) : tab === "timeframes" ? (

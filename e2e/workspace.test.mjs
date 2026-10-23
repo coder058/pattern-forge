@@ -62,8 +62,16 @@ for (const viewport of viewports) {
       assert.equal(await page.getByRole('button', {name: /Stored/}).count(), 0);
 
       // Pattern filters keep the list and the markers to the chosen shape.
+      // Default view: only the two engulfing shapes are switched on.
+      const chips = page.getByRole('group',{name:'Candlestick pattern'});
+      const chip = name => chips.getByRole('button',{name:new RegExp('^' + name.replace(' shape','').replace('-shape',''))});
+      assert.equal(await chip('Bullish engulfing').getAttribute('aria-pressed'), 'true');
+      assert.equal(await chip('Doji').getAttribute('aria-pressed'), 'false');
+      const shapes = ['Bullish engulfing','Bearish engulfing','Hammer shape','Shooting-star shape','Doji'];
       for (const pattern of ['Doji','Hammer shape','Shooting-star shape','Bearish engulfing','Bullish engulfing']) {
-        await page.getByRole('group',{name:'Candlestick pattern'}).getByRole('button',{name:new RegExp('^' + pattern.replace(' shape','').replace('-shape',''))}).click();
+        // Show only this shape: switch everything on, then the others off.
+        await chips.getByRole('button',{name:'All',exact:true}).click();
+        for (const other of shapes.filter(n => n !== pattern)) await chip(other).click();
         await assertPlot();
         const names = await page.locator('.mw-pattern-hit strong').allTextContents();
         assert.ok(names.length && names.every(name => name === pattern), `${pattern}: ${names}`);
@@ -72,7 +80,11 @@ for (const viewport of viewports) {
       await page.locator('.mw-pattern-hit').nth(1).click();
       const picked = await page.locator('.mw-pattern-hit.is-active time').textContent();
       await page.waitForFunction(() => Boolean(document.querySelector('[data-testid="professional-market-chart"]')?.getAttribute('data-selected-pattern-time')));
-      assert.match(await page.getByTestId('chart-setup').innerText(), new RegExp(picked.replace(' UTC','')));
+      // The reading names the shape and the time it became known: the candle's close, 4h after it opened.
+      const opened = Date.parse(picked.replace(' UTC', '') + ' UTC');
+      assert.equal(Number(await chart.getAttribute('data-selected-pattern-time')) * 1000, opened);
+      const known = new Date(opened + 4 * 3600000).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'UTC'});
+      assert.match(await page.getByTestId('chart-setup').innerText(), new RegExp(`Bullish engulfing · known at the 4h close, ${known} UTC`));
 
       // Closing the panel keeps the reading and markers; it can be reopened.
       const readingBeforeClose = await page.getByTestId('chart-setup').innerText();
@@ -212,6 +224,26 @@ test('backtest tab uses only candles visible at the replay position', {timeout:T
     await page.locator('.pf-bt .mw-pattern-hit').first().click();
     await page.waitForFunction(() => Boolean(document.querySelector('[data-testid="professional-market-chart"]')?.getAttribute('data-selected-pattern-time')));
     assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
+test('a shared link restores the market, timeframe, tab and shapes', {timeout:TEST_TIMEOUT_MS}, async () => {
+  const browser = await launch();
+  try {
+    const page = await browser.newPage();
+    await skipGuide(page);
+    await page.goto(`${baseURL}/?market=recorded-XAGUSD&tf=1d&tab=trend&shapes=Doji`);
+    await page.waitForFunction(() => document.querySelector('.pf-title h2')?.textContent.startsWith('Silver'));
+    assert.equal(await page.getByRole('group',{name:'Chart timeframe'}).getByRole('button',{name:'1d',exact:true}).getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.getByRole('tab',{name:'Trend'}).getAttribute('aria-selected'), 'true');
+    await page.getByRole('tab',{name:'Patterns'}).click();
+    assert.equal(await page.getByRole('group',{name:'Candlestick pattern'}).getByRole('button',{name:/^Doji/}).getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.getByRole('group',{name:'Candlestick pattern'}).getByRole('button',{name:/^Bullish engulfing/}).getAttribute('aria-pressed'), 'false');
+    await page.getByRole('group',{name:'Chart timeframe'}).getByRole('button',{name:'4h',exact:true}).click();
+    await page.waitForFunction(() => new URLSearchParams(location.search).get('tf') === '4h');
+    // Unknown or unsafe values fall back to the defaults instead of breaking the page.
+    await page.goto(`${baseURL}/?market=nope&tf=9y&tab=%3Cscript%3E&shapes=x`);
+    await page.waitForFunction(() => document.querySelector('.pf-title h2')?.textContent.startsWith('Gold'));
   } finally { await browser.close(); }
 });
 
