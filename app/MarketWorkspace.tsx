@@ -29,6 +29,7 @@ import {
 import "./workspace.css";
 import { LiveQuote } from "./QuoteTicker";
 import { BacktestPanel } from "./BacktestPanel";
+import { PatternGlyph } from "./PatternGlyph";
 
 type Tab = "patterns" | "trend" | "timeframes" | "backtest" | "case";
 type LowerPane = "none" | "volume" | "rsi" | "macd";
@@ -633,7 +634,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
               <section className="pf-guide-card" aria-label="Quick guide">
                 <h2>Read a chart without hindsight</h2>
                 <ol>
-                  <li><strong>Patterns are marked for you.</strong> Arrows on the chart; the pattern list jumps to each one.</li>
+                  <li><strong>Patterns are marked for you.</strong> Arrows on the chart, like <PatternGlyph name="Bullish engulfing" size={16} /> a bullish engulfing; the pattern list jumps to each one.</li>
                   <li><strong>Press ⏵ Replay.</strong> The chart rewinds and candles appear one by one — patterns appear only once their candle has closed.</li>
                   <li><strong>Read the trend.</strong> The Trend tab gives a short Murphy-style reading of the last candle.</li>
                 </ol>
@@ -709,13 +710,13 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                     <button aria-pressed={shown.length === PATTERN_NAMES.length} onClick={() => choosePattern("all")}>All</button>
                     {PATTERN_NAMES.map((name) => (
                       <button key={name} aria-pressed={shown.includes(name)} onClick={() => choosePattern(name)} title={PATTERN_HELP[name]}>
-                        <i className={`pf-dot ${tone(name)}`} aria-hidden="true" />
+                        <PatternGlyph name={name} size={16} />
                         {name.replace(" shape", "").replace("-shape", "")}
                         <small>{counts[name] ?? 0}</small>
                       </button>
                     ))}
                   </div>
-                  <p className="pf-help">Tap a shape to show or hide it.{shown.length <= 2 && <> {shown.map((n) => <span key={n}><b>{n}:</b> {PATTERN_HELP[n]} </span>)}</>}</p>
+                  <p className="pf-help">Tap a shape to show or hide it.{shown.length <= 2 && <> {shown.map((n) => <span key={n} className="pf-help-line"><PatternGlyph name={n} size={22} /><span><b>{n}:</b> {PATTERN_HELP[n]}</span></span>)}</>}</p>
                   {canPreview && (
                     <label className="pf-check">
                       <input type="checkbox" checked={previewForming} onChange={(e) => setPreviewForming(e.target.checked)} />
@@ -733,7 +734,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                             aria-pressed={selected}
                             onClick={() => { setPreviewForming(false); setHighlightTime(Number(pattern.time)); setLayers((v) => ({ ...v, patterns: true })); }}
                           >
-                            <i className={`pf-dot ${tone(pattern.direction)}`} aria-hidden="true" />
+                            <span className="pf-hit-glyph"><PatternGlyph name={pattern.name} size={26} /></span>
                             <span>
                               <strong>{pattern.name}</strong>
                               <time>{stamp(Number(pattern.time))} UTC</time>
