@@ -2657,7 +2657,8 @@ button.matrix-row.is-active {
   gap: 10px;
   left: 10px;
   max-width: calc(100% - 96px);
-  overflow-x: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 5px 7px;
   pointer-events: none;
   position: absolute;

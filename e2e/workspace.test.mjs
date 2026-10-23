@@ -179,7 +179,7 @@ test('first visit shows a short guide once', {timeout:TEST_TIMEOUT_MS}, async ()
   try {
     const page = await browser.newPage();
     await page.goto(baseURL);
-    const guide = page.getByRole('complementary',{name:'Quick guide'});
+    const guide = page.getByRole('region',{name:'Quick guide'});
     await guide.waitFor();
     await page.getByRole('button',{name:'Got it'}).click();
     assert.equal(await guide.count(), 0);

@@ -421,6 +421,13 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   };
 
   const groups = [...new Set(filtered.map((s) => s.group))];
+  const tabs = ([
+    ["patterns", "Patterns"],
+    ["trend", "Trend"],
+    ["timeframes", "Timeframes"],
+    ["backtest", "Backtest"],
+    ...(source.kind === "case" ? [["case", "Case"]] : []),
+  ] as [Tab, string][]);
   const counts = useMemo(() => {
     const all = calculateChart(bars, fastPeriod, slowPeriod).overlays.patterns;
     return Object.fromEntries(PATTERN_NAMES.map((n) => [n, all.filter((p) => p.name === n).length])) as Record<string, number>;
@@ -452,7 +459,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             />
             {groups.map((group) => (
               <section key={group}>
-                <h3>{group}</h3>
+                <h2>{group}</h2>
                 {filtered.filter((s) => s.group === group).map((s) => (
                   <button
                     key={s.id}
@@ -623,7 +630,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
             )}
             {notice && <div className="pf-toast" role="status"><span aria-hidden="true">◆</span> New pattern: {notice}</div>}
             {guideOpen && (
-              <aside className="pf-guide-card" aria-label="Quick guide">
+              <section className="pf-guide-card" aria-label="Quick guide">
                 <h2>Read a chart without hindsight</h2>
                 <ol>
                   <li><strong>Patterns are marked for you.</strong> Arrows on the chart; the pattern list jumps to each one.</li>
@@ -632,7 +639,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                 </ol>
                 <p className="pf-muted">Shortcuts: <kbd>Space</kbd> play/pause · <kbd>Shift</kbd>+<kbd>←</kbd><kbd>→</kbd> step · <kbd>/</kbd> search markets</p>
                 <button className="pf-primary" onClick={closeGuide}>Got it</button>
-              </aside>
+              </section>
             )}
           </div>
           {replayable && baseBars.length > 0 && replayCount !== null && (
@@ -674,19 +681,26 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
 
         {panelOpen && (
           <aside className="pf-panel" aria-label="Analysis">
-            <div className="pf-tabs" role="tablist" aria-label="Analysis views">
-              {([
-                ["patterns", "Patterns"],
-                ["trend", "Trend"],
-                ["timeframes", "Timeframes"],
-                ["backtest", "Backtest"],
-                ...(source.kind === "case" ? [["case", "Case"]] : []),
-              ] as [Tab, string][]).map(([value, label]) => (
-                <button key={value} role="tab" aria-selected={tab === value} onClick={() => openTab(value)}>{label}</button>
-              ))}
+            <div className="pf-tabs">
+              <div role="tablist" aria-label="Analysis views" onKeyDown={(e) => {
+                // SOURCE: WAI-ARIA tabs pattern — arrow keys move between tabs, Home/End jump.
+                const index = tabs.findIndex(([value]) => value === tab);
+                const next = e.key === "ArrowRight" ? index + 1 : e.key === "ArrowLeft" ? index - 1
+                  : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : null;
+                if (next === null) return;
+                e.preventDefault();
+                const target = tabs[(next + tabs.length) % tabs.length][0];
+                openTab(target);
+                requestAnimationFrame(() => document.getElementById(`tab-${target}`)?.focus());
+              }}>
+                {tabs.map(([value, label]) => (
+                  <button key={value} id={`tab-${value}`} role="tab" aria-selected={tab === value}
+                    aria-controls="analysis-panel" tabIndex={tab === value ? 0 : -1} onClick={() => openTab(value)}>{label}</button>
+                ))}
+              </div>
               <button className="pf-close" aria-label="Close analysis" onClick={() => setPanelOpen(false)}>×</button>
             </div>
-            <div className="pf-panel-body">
+            <div className="pf-panel-body" id="analysis-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0}>
               {busy || error ? (
                 <p className="pf-muted">Load a market to see its analysis.</p>
               ) : tab === "patterns" ? (
@@ -747,9 +761,9 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                     <p>{murphy.because}</p>
                   </div>
                   <dl className="pf-steps">
-                    <div><dt>1 · Direction</dt><dd>{murphy.trend}</dd><p>Close vs EMA {fastPeriod} and EMA {slowPeriod}.</p></div>
-                    <div><dt>2 · Location</dt><dd>{murphy.location}</dd><p>Where the close sits in the 20-candle Bollinger envelope.</p></div>
-                    <div><dt>3 · Momentum</dt><dd>{murphy.rsi === undefined ? "RSI warming up" : `RSI ${murphy.rsi.toFixed(1)}`}</dd><p>Wilder RSI 14: above 70 is strong, below 30 weak — not an automatic signal.</p></div>
+                    <div><dt>1 · Direction</dt><dd>{murphy.trend}</dd><dd className="pf-step-note">Close vs EMA {fastPeriod} and EMA {slowPeriod}.</dd></div>
+                    <div><dt>2 · Location</dt><dd>{murphy.location}</dd><dd className="pf-step-note">Where the close sits in the 20-candle Bollinger envelope.</dd></div>
+                    <div><dt>3 · Momentum</dt><dd>{murphy.rsi === undefined ? "RSI warming up" : `RSI ${murphy.rsi.toFixed(1)}`}</dd><dd className="pf-step-note">Wilder RSI 14: above 70 is strong, below 30 weak — not an automatic signal.</dd></div>
                   </dl>
                   <button className="pf-wide pf-secondary" onClick={() => setLayers((v) => ({ ...v, ema: !(v.ema && v.bollinger), bollinger: !(v.ema && v.bollinger) }))}>
                     {layers.ema && layers.bollinger ? "Hide EMA and bands" : "Show EMA and bands on the chart"}

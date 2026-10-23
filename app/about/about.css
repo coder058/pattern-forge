@@ -27,7 +27,7 @@
 .pf-about > header { padding: 40px 0 8px; }
 .pf-about h1 { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.12; letter-spacing: -.03em; color: #f3f6fb; margin: 8px 0 18px; max-width: 22ch; }
 .pf-about > header p { font-size: 18px; line-height: 1.65; max-width: 70ch; color: #c3cedd; }
-.pf-about-kicker { color: #2962ff !important; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 13px !important; }
+.pf-about-kicker { color: #7d9dff !important; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 13px !important; }
 .pf-about > .pf-guide { padding: 0; }
 .pf-about .mw-build-guide > summary { padding: 18px 0; color: #f3f6fb; font-weight: 600; cursor: pointer; }
 .pf-about .mw-build-guide .pf-guide { padding: 0; }
