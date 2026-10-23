@@ -177,33 +177,35 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
   const count = replayCount === null ? baseBars.length : Math.min(replayCount, baseBars.length);
   const inReplay = replayable && replayCount !== null && count < baseBars.length;
   const cutoff = baseBars[count - 1]?.closeTime ?? active?.asOf ?? 0;
+  // Closed candles of one interval up to the replay cutoff; higher intervals are built
+  // from the base only when asked for, so the first view aggregates one timeframe.
+  const barsFor = useCallback((interval: Interval): Bar[] => {
+    const native = (active?.frames[interval] ?? []).filter((b) => b.closeTime <= cutoff);
+    if (!active?.base || interval === active.base) return native;
+    return aggregateBars(active.frames[active.base] ?? [], active.base, interval, cutoff);
+  }, [active, cutoff]);
+  const bars = useMemo(() => barsFor(timeframe), [barsFor, timeframe]);
   const frames = useMemo(
-    () =>
-      Object.fromEntries(
-        intervals.map((interval) => {
-          const native = (active?.frames[interval] ?? []).filter((b) => b.closeTime <= cutoff);
-          if (!active?.base || interval === active.base) return [interval, native];
-          return [interval, aggregateBars(active.frames[active.base] ?? [], active.base, interval, cutoff)];
-        }),
-      ) as Partial<Record<Interval, Bar[]>>,
-    [active, cutoff, intervals],
+    () => (tab === "timeframes" ? Object.fromEntries(intervals.map((tf) => [tf, barsFor(tf)])) : {}) as Partial<Record<Interval, Bar[]>>,
+    [tab, intervals, barsFor],
   );
-  const bars = frames[timeframe] ?? [];
   const canPreview = source.kind === "recording" && replayBase === "1h" && timeframe === "4h" &&
     tab === "patterns" && shown.some((name) => name.endsWith("engulfing"));
   const showingForming = canPreview && previewForming;
   const provisional = useMemo(() => (showingForming ? formingFourHour(baseBars, cutoff) : null),
     [showingForming, baseBars, cutoff]);
-  const chart = useMemo(() => {
-    const result = calculateChart(bars, fastPeriod, slowPeriod);
-    result.overlays.patterns = result.overlays.patterns.filter((p) => shown.includes(p.name));
-    return result;
-  }, [bars, fastPeriod, slowPeriod, shown]);
+  // One full calculation per candle set; the shape filter and the counts reuse it.
+  const fullChart = useMemo(() => calculateChart(bars, fastPeriod, slowPeriod), [bars, fastPeriod, slowPeriod]);
+  const chart = useMemo(() => ({
+    ...fullChart,
+    overlays: { ...fullChart.overlays, patterns: fullChart.overlays.patterns.filter((p) => shown.includes(p.name)) },
+  }), [fullChart, shown]);
   const oscillatorData = useMemo(
     () => (lowerPanel === "rsi" ? { line: rsi(bars) } : lowerPanel === "macd" ? macd(bars) : undefined),
     [bars, lowerPanel],
   );
-  const murphy = useMemo(() => murphyReading(bars, fastPeriod, slowPeriod), [bars, fastPeriod, slowPeriod]);
+  // The Murphy reading is only shown on the Trend tab; skip the work elsewhere.
+  const murphy = useMemo(() => (tab === "trend" ? murphyReading(bars, fastPeriod, slowPeriod) : null), [tab, bars, fastPeriod, slowPeriod]);
   const last = bars.at(-1);
   const prev = bars.at(-2);
   const patterns = chart.overlays.patterns;
@@ -234,7 +236,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
         anchor: provisional ? { time: provisional.bar.t, label: "Forming" } : undefined,
       };
     }
-    if (tab === "trend") {
+    if (tab === "trend" && murphy) {
       return {
         kicker: "Murphy reading · last closed bar",
         setup: murphy.setup,
@@ -313,10 +315,10 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
 
   useEffect(() => {
     if (!active || busy || replayCount !== null) return;
-    if ((frames[timeframe]?.length ?? 0) > 0) return;
-    const next = intervals.find((tf) => (frames[tf]?.length ?? 0) > 0);
+    if (bars.length > 0) return;
+    const next = intervals.find((tf) => barsFor(tf).length > 0);
     if (next) setTimeframe(next);
-  }, [active, busy, frames, timeframe, intervals, replayCount]);
+  }, [active, busy, bars, barsFor, timeframe, intervals, replayCount]);
 
   // Bar replay: advance one base candle per tick until the end of the recording.
   useEffect(() => {
@@ -430,9 +432,9 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
     ...(source.kind === "case" ? [["case", "Case"]] : []),
   ] as [Tab, string][]);
   const counts = useMemo(() => {
-    const all = calculateChart(bars, fastPeriod, slowPeriod).overlays.patterns;
+    const all = fullChart.overlays.patterns;
     return Object.fromEntries(PATTERN_NAMES.map((n) => [n, all.filter((p) => p.name === n).length])) as Record<string, number>;
-  }, [bars, fastPeriod, slowPeriod]);
+  }, [fullChart]);
 
   return (
     <main className="market-workspace pf-app" ref={workspaceRef}>
@@ -754,7 +756,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                     <p>Doji: body ≤ 10% of range. Hammer / shooting star: long wick ≥ 2× body, opposite wick ≤ body. Engulfing: the body contains the previous opposite body. Thresholds are descriptive, not calibrated: a shape does not predict the next candle.</p>
                   </details>
                 </>
-              ) : tab === "trend" ? (
+              ) : tab === "trend" && murphy ? (
                 <>
                   <div className={`pf-verdict ${tone(murphy.trend === "Rising" ? "bull" : murphy.trend === "Falling" ? "bear" : "")}`}>
                     <small>Last closed {timeframe} candle</small>

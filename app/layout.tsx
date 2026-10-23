@@ -10,6 +10,8 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  // Only numbers use it; don't let it compete with the chart data on the first visit.
+  preload: false,
 });
 
 const title = "Pattern Forge — Read candlestick patterns without hindsight";
