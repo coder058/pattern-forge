@@ -188,6 +188,11 @@ test('first visit shows a short guide once', {timeout:TEST_TIMEOUT_MS}, async ()
     assert.equal(await guide.count(), 0, 'guide must not return after it is dismissed');
     await page.getByRole('button',{name:'Show the quick guide'}).click();
     await guide.waitFor();
+    // The guide's main action starts a replay straight away.
+    await page.getByRole('button',{name:'⏵ Show me a replay'}).click();
+    assert.equal(await guide.count(), 0);
+    await page.getByRole('slider',{name:'Replay position'}).waitFor();
+    await page.getByRole('button',{name:'Pause replay'}).waitFor();
   } finally { await browser.close(); }
 });
 

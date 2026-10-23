@@ -646,7 +646,12 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                   <li><strong>Read the trend.</strong> The Trend tab gives a short Murphy-style reading of the last candle.</li>
                 </ol>
                 <p className="pf-muted">Shortcuts: <kbd>Space</kbd> play/pause · <kbd>Shift</kbd>+<kbd>←</kbd><kbd>→</kbd> step · <kbd>/</kbd> search markets</p>
-                <button className="pf-primary" onClick={closeGuide}>Got it</button>
+                <div className="pf-guide-actions">
+                  {replayable && baseBars.length > 0 && (
+                    <button className="pf-primary" onClick={() => { closeGuide(); startReplay(); }}>⏵ Show me a replay</button>
+                  )}
+                  <button className={replayable && baseBars.length > 0 ? "pf-secondary" : "pf-primary"} onClick={closeGuide}>Got it</button>
+                </div>
               </section>
             )}
           </div>
