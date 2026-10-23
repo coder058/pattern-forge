@@ -1,4 +1,4 @@
-// Regenerate public/og.png (1200×630 social card) from the running app.
+// Regenerate public/og.png (1200×630 social card) and docs/screenshot.png (README) from the running app.
 //   npm run build && npx next start -p 3000   # in another terminal
 //   node scripts/make_og.mjs                  # PF_BASE_URL / PF_CHROMIUM optional
 import { writeFileSync } from 'node:fs';
@@ -42,6 +42,15 @@ try {
   </div></body></html>`);
   writeFileSync(new URL('../public/og.png', import.meta.url), await card.screenshot());
   console.log('public/og.png written');
+
+  // 3. The README screenshot: the whole default view at a common laptop size.
+  const readme = await browser.newPage({ viewport: { width: 1440, height: 860 } });
+  await readme.addInitScript(() => localStorage.setItem('pf-guide-v2-seen', '1'));
+  await readme.goto(`${base}/?market=recorded-XAUUSD&tf=4h&tab=patterns`, { waitUntil: 'networkidle' });
+  await readme.getByTestId('professional-market-chart').locator('canvas').first().waitFor();
+  await readme.waitForTimeout(800);
+  await readme.screenshot({ path: new URL('../docs/screenshot.png', import.meta.url).pathname });
+  console.log('docs/screenshot.png written');
 } finally {
   await browser.close();
 }

@@ -1,21 +1,29 @@
-# Pattern Forge — market workspace
+# Pattern Forge — read candlestick patterns without hindsight
 
 [![CI](https://github.com/coder058/pattern-forge/actions/workflows/check.yml/badge.svg)](https://github.com/coder058/pattern-forge/actions/workflows/check.yml)
 
-**Live demo:** https://pattern-forge-five.vercel.app/
+A chart workspace, laid out like a trading terminal, that marks candlestick patterns
+**only once their candle has closed** — so you can rewind any market and see what was
+actually knowable at each moment.
 
-**In-app walkthrough:** `/about` explains the user journey, data paths, component dependencies,
-the actual database tables and engineering trade-offs. [Reading rules and reference limits](docs/reading-rules.md).
+**[Open the live demo →](https://pattern-forge-five.vercel.app/)** · [How it works](https://pattern-forge-five.vercel.app/about) · [Research report](research/backtest/REPORT.md)
 
-**Architecture:** the browser talks to Next.js route handlers that validate closed candles from Hyperliquid's public HTTP API. A separate WebSocket carries live mid-price and never writes into replay. Recorded replay uses only the selected prefix; incomplete higher-timeframe groups are omitted, not guessed. The public Vercel demo does not serve PostgreSQL — persistence is for local use and CI.
+![Pattern Forge: Gold 4h with engulfing patterns marked, the reading of the selected pattern above the chart and the list of matches beside it](docs/screenshot.png)
 
-The application uses Next.js. Unused Vite/Vinext/Cloudflare migration dependencies were removed during the September 2026 dependency audit; no application code or active deployment depends on them.
+- **See the shapes.** Engulfing, hammer, shooting-star and doji candles are marked and
+  named on the chart, each with a small drawing of what it looks like.
+- **Rewind and replay.** Bar replay hides every later candle; a notice appears the moment a
+  pattern's candle closes.
+- **Read the trend.** A Murphy-style reading of direction, location and momentum.
+- **Ask whether it pays.** The Backtest tab trades any shape with costs and next-candle
+  entries, always next to random entries in the same direction.
 
-[Project walkthrough: user journey, dependencies and implementation steps](https://coder058.github.io/profile/projects/pattern-forge.html).
+**Does it pay? No.** A [preregistered study](research/backtest/REPORT.md) tested 360 rules on
+ten markets; the three best on the earlier 60% of the data all lost money on the held-out
+40% after costs. Their apparent profit was the market falling. The product keeps that
+lesson in view rather than selling a strategy.
 
-A chart-first workspace for public Hyperliquid quotes, candle snapshots and recorded
-Polymarket Perps markets. This is not an order terminal, strategy recommendation,
-live account monitor or proof of profitability.
+This is not an order terminal, a strategy recommendation or a live account monitor.
 
 ## Interface
 
@@ -253,3 +261,18 @@ intervals. Tests cover HTTP failures, malformed data, total outages and partial
 timeouts with synthetic responses. No uptime, customer-adoption or operational
 performance claim is made. Code is published for inspection; no additional
 reuse license is granted. Third-party licenses and chart attribution remain.
+
+## Architecture
+
+The browser talks to Next.js route handlers that validate closed candles from Hyperliquid's
+public HTTP API. A separate WebSocket carries live mid-price and never writes into replay.
+Recorded replay uses only the selected prefix; incomplete higher-timeframe groups are
+omitted, not guessed. The public Vercel demo does not serve PostgreSQL — persistence is for
+local use and CI. [Reading rules and reference limits](docs/reading-rules.md) ·
+[Project walkthrough](https://coder058.github.io/profile/projects/pattern-forge.html).
+
+Unused Vite/Vinext/Cloudflare migration dependencies were removed during the September 2026
+dependency audit; no application code or active deployment depends on them.
+
+Screenshots and the social card are generated from the running app with
+`node scripts/make_og.mjs`.
