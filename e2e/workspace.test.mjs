@@ -179,6 +179,42 @@ test('first visit shows a short guide once', {timeout:TEST_TIMEOUT_MS}, async ()
   } finally { await browser.close(); }
 });
 
+test('backtest tab uses only candles visible at the replay position', {timeout:TEST_TIMEOUT_MS}, async () => {
+  const browser = await launch();
+  try {
+    const page = await browser.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await skipGuide(page);
+    await page.goto(baseURL);
+    await page.getByTestId('professional-market-chart').waitFor();
+    await page.getByRole('tab',{name:'Backtest'}).click();
+    const verdict = page.getByTestId('backtest-verdict');
+    await verdict.waitFor();
+    await page.getByRole('combobox',{name:'Backtest exit'}).selectOption({label:'1 candle'});
+    const full = Number(await verdict.getAttribute('data-trades'));
+    assert.ok(full > 0, 'the default rule must trade on the Gold recording');
+    assert.match(await verdict.innerText(), /Random entries, same direction and exit/);
+    await page.getByRole('button',{name:/Replay/}).first().click();
+    const slider = page.getByRole('slider',{name:'Replay position'});
+    await slider.waitFor();
+    await page.getByRole('button',{name:'Pause replay'}).click().catch(() => {});
+    await setSlider(slider, 1200);
+    await page.waitForFunction(n => Number(document.querySelector('[data-testid="backtest-verdict"]')?.getAttribute('data-trades')) < n, full);
+    const cutoffText = await page.locator('.pf-replay time').textContent();
+    const cutoff = Date.parse(cutoffText.replace(' UTC', '') + ' UTC');
+    const lastExit = Number(await verdict.getAttribute('data-last-exit'));
+    assert.ok(!lastExit || lastExit <= cutoff + 60000, `a trade exits after the replay position: ${lastExit} > ${cutoff}`);
+    // Costs change the result, never the number of trades.
+    const before = Number(await verdict.getAttribute('data-trades'));
+    await page.getByRole('button',{name:'No costs'}).click();
+    assert.equal(Number(await verdict.getAttribute('data-trades')), before);
+    await page.locator('.pf-bt .mw-pattern-hit').first().click();
+    await page.waitForFunction(() => Boolean(document.querySelector('[data-testid="professional-market-chart"]')?.getAttribute('data-selected-pattern-time')));
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
+
 test('SYNTHETIC source outage offers a working historical recording, not fabricated live data', {timeout:TEST_TIMEOUT_MS}, async () => {
   const browser = await launch();
   try {

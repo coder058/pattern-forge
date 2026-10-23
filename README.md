@@ -32,6 +32,10 @@ The app opens straight on the chart, laid out like a trading terminal:
 - **Right panel:** *Patterns* (filter by shape with counts, newest-first list that jumps to
   each match), *Trend* (a Murphy-style reading of direction, location and momentum, with
   the EMA and Bollinger lines it refers to) and *Timeframes* (the same market at each speed).
+- **Backtest tab:** would trading a shape have made money? Signal at the close, entry at
+  the next open, stop before target when both are touched, costs on both sides (0, 16 or
+  32 bps), and always next to a random-entry baseline with the same direction and exit.
+  It uses only the candles visible at the replay position.
 - **Bar replay:** rewinds 150 candles and plays them back at 1×, 2× or 4×, with a step
   control, a slider and *Jump to end*. Indicators, patterns and higher-timeframe candles use
   only the candles closed at the replay position. Shortcuts: `Space` play/pause,
@@ -61,6 +65,19 @@ around committed recorded candles, not live market results. They cover the
 initial chart, each analysis preset, shape filters, replay, drawing controls,
 source failure and desktop/narrow/mobile viewports. Set `PF_SCREENSHOT_DIR`
 to save local screenshots. This is UI regression coverage, not a latency benchmark.
+
+## Does it make money? A preregistered test
+
+No. [`research/backtest/REPORT.md`](research/backtest/REPORT.md) tests 360 simple rules
+built on the marked shapes (follow or fade, trend or band filters, fixed or ATR exits, 1h
+and 4h) on all ten recordings. The protocol, split and pass criteria were committed before
+any run; the three best rules on the earlier 60% of each market were then run once on the
+held-out 40%. All three lost money after costs (−95, −125 and −50 bps per trade). Their
+discovery profits came from markets falling: random short entries did about as well.
+The study also found and removed bad prints in the recordings (Silver's first candle at
+Gold's price; isolated wicks to round numbers) — 14 of ~20,000 hourly candles.
+
+Run it: `node research/backtest/discover.mjs`, then `node research/backtest/holdout.mjs`.
 
 ## Recordings
 

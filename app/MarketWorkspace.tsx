@@ -28,8 +28,9 @@ import {
 } from "./marketSources";
 import "./workspace.css";
 import { LiveQuote } from "./QuoteTicker";
+import { BacktestPanel } from "./BacktestPanel";
 
-type Tab = "patterns" | "trend" | "timeframes" | "case";
+type Tab = "patterns" | "trend" | "timeframes" | "backtest" | "case";
 type LowerPane = "none" | "volume" | "rsi" | "macd";
 // SOURCE: detector names implemented in marketAnalysis.calculateChart.
 const PATTERN_NAMES = ["Bullish engulfing", "Bearish engulfing", "Hammer shape", "Shooting-star shape", "Doji"];
@@ -556,7 +557,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                 oscillatorData={oscillatorData}
                 reading={chartReading}
                 // SOURCE: zoom only when the reader picks a match; the first view stays wide.
-                highlightTime={tab === "patterns" ? highlightTime : null}
+                highlightTime={tab === "patterns" || tab === "backtest" ? highlightTime : null}
                 provisionalCandle={provisional?.bar}
               />
             )}
@@ -617,6 +618,7 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                 ["patterns", "Patterns"],
                 ["trend", "Trend"],
                 ["timeframes", "Timeframes"],
+                ["backtest", "Backtest"],
                 ...(source.kind === "case" ? [["case", "Case"]] : []),
               ] as [Tab, string][]).map(([value, label]) => (
                 <button key={value} role="tab" aria-selected={tab === value} onClick={() => openTab(value)}>{label}</button>
@@ -693,6 +695,14 @@ export default function MarketWorkspace({ storedEnabled = false }: { storedEnabl
                   </button>
                   <p className="pf-muted">A reading order inspired by John J. Murphy: direction first, then location and momentum. Descriptive, not a trading signal.</p>
                 </>
+              ) : tab === "backtest" ? (
+                <BacktestPanel
+                  key={`${sourceId}-${timeframe}`}
+                  bars={bars}
+                  timeframe={timeframe}
+                  initialSignal={patternName}
+                  onPick={(time) => { setHighlightTime(time); setLayers((v) => ({ ...v, patterns: true })); }}
+                />
               ) : tab === "timeframes" ? (
                 <>
                   <p className="pf-muted">The same market at different speeds. Click a row to switch.</p>

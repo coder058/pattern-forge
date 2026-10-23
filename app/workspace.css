@@ -362,6 +362,28 @@ kbd {
 .pf-matrix small { color: var(--muted); font-weight: 400; font-size: 12px; }
 .pf-matrix b { font: 600 13px var(--font-mono); color: var(--strong); }
 
+/* ---------- Backtest tab ---------- */
+.pf-bt { display: grid; gap: 10px; }
+.pf-bt .pf-muted { margin: 0; }
+.pf-bt .pf-muted a { color: #8fb0ff; }
+.pf-field { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.pf-field select { background: var(--panel); color: var(--strong); border: 1px solid #3a3f4b; border-radius: 6px; padding: 7px 8px; font-size: 13.5px; }
+.pf-seg { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 2px; gap: 2px; }
+.pf-seg button { flex: 1; border: 0; background: transparent; border-radius: 6px; padding: 6px 4px; font-size: 12px; color: var(--muted); }
+.pf-seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--strong); }
+.pf-bt .pf-verdict { margin: 4px 0 0; }
+.pf-equity { width: 100%; height: 64px; background: var(--panel); border-radius: 8px; }
+.pf-equity line { stroke: #4a4f5c; stroke-dasharray: 3 3; }
+.pf-equity path { fill: none; stroke-width: 1.8; }
+.pf-equity path.up { stroke: var(--up); }
+.pf-equity path.down { stroke: var(--down); }
+.pf-bt-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; }
+.pf-bt-stats div { background: var(--panel); border-radius: 8px; padding: 8px 10px; }
+.pf-bt-stats dt { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.pf-bt-stats dd { margin: 2px 0 0; color: var(--strong); font: 600 14px var(--font-mono); }
+.pf-hits b.up { color: var(--up); }
+.pf-hits b.down { color: var(--down); }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
   .pf-body.with-panel { grid-template-columns: 44px minmax(0, 1fr) 290px; }

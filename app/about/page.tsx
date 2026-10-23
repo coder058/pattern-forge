@@ -35,6 +35,13 @@ export default function About() {
           Polymarket Perps contracts, not spot gold, oil or cash indices, and they end in August 2026.</p>
         <p>Pattern shapes and the Murphy-style reading describe the chart. They do not predict a profitable trade,
           and nothing here places orders.</p>
+        <h2>Does trading the shapes make money?</h2>
+        <p>No — and the app shows why. A preregistered study tested 360 simple rules built on these shapes on all ten
+          recordings, with costs and next-candle entries. The three best rules on the earlier 60% of each market all
+          lost money on the held-out 40% (−95, −125 and −50 basis points per trade). Their apparent profit came from
+          markets falling: random short entries did about as well. The Backtest tab runs the same engine on any market
+          and replay position, always next to a random-entry baseline.{" "}
+          <a href="https://github.com/coder058/pattern-forge/blob/main/research/backtest/REPORT.md">Read the report</a>.</p>
       </section>
       <ProjectGuide open />
     </main>
